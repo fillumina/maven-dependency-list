@@ -1,0 +1,16 @@
+#!/bin/bash                    
+# see: https://gist.github.com/briandealwis/782862/9cc9ef8a78af3bb78a692313f8bfa6fb76ab4663
+                                                                                                                     
+# simple script for turning a jar with a Main-Class                                                                                                 
+# into a stand alone executable                                                                                                                     
+# cat [your jar file] >> [this file]                                                                                                                
+# then chmod +x [this file]                                                                                                                         
+# you can now exec [this file]                                                                                                                      
+
+commandToRun="$(printf "%q " "$@")"
+if test "$commandToRun" = "'' "; then
+  eval "java -Xmx1G -jar $0"
+else
+  eval "java -Xmx1G -jar $0 $commandToRun"
+fi
+exit
