@@ -1,6 +1,6 @@
 # maven-reverse-dependency
 
-It browses trees of java `maven` projects indexing dependencies.
+It browses trees of java `maven` projects listing the dependencies for each project with various filters.
 
 It accepts the following parameters:
 
