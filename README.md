@@ -1,4 +1,4 @@
-# maven-reverse-dependency
+# maven-dependency-list
 
 It browses trees of java `maven` projects listing the dependencies for each project with various filters.
 
