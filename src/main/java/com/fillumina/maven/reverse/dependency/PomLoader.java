@@ -1,6 +1,5 @@
 package com.fillumina.maven.reverse.dependency;
 
-import com.fillumina.maven.reverse.dependency.PackageId;
 import java.io.File;
 import java.io.IOException;
 import javax.xml.XMLConstants;
@@ -43,7 +42,8 @@ public class PomLoader {
             doc.getDocumentElement().normalize();
 
             PackageId name = extractProject(doc.getDocumentElement());
-            parseDependency(doc, name, associationBuilder);
+            parseDependency(doc, name, "dependency", associationBuilder);
+            parseDependency(doc, name, "plugin", associationBuilder);
 
         } catch (ParserConfigurationException | SAXException | IOException e) {
             throw new RuntimeException(e);
@@ -51,16 +51,16 @@ public class PomLoader {
 
     }
 
-    private void parseDependency(Document doc, PackageId name, AssociationBuilder associationBuilder)
+    private void parseDependency(Document doc, PackageId pkgName, String tagName, AssociationBuilder associationBuilder)
             throws DOMException, NumberFormatException {
-        NodeList list = doc.getElementsByTagName("dependency");
+        NodeList list = doc.getElementsByTagName(tagName);
 
         for (int i = 0; i < list.getLength(); i++) {
             Node node = list.item(i);
             if (node.getNodeType() == Node.ELEMENT_NODE) {
                 Element element = (Element) node;
                 PackageId dependency = extractProject(element);
-                associationBuilder.add(name, dependency);
+                associationBuilder.add(pkgName, dependency);
             }
         }
     }
