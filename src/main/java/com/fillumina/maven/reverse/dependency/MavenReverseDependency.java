@@ -40,9 +40,14 @@ public class MavenReverseDependency {
                     arguments.isReverse());
 
             System.out.println("");
-            poms.forEach(p -> PomLoader.INSTANCE.loader(p.toFile(), associationBuilder));
+            poms.forEach(p -> PomLoader.INSTANCE.loader(p.toFile(), associationBuilder,
+                    arguments.isNoDependencies()));
 
-            associationBuilder.getMap().values().stream().forEach(System.out::println);
+            if (arguments.isNoDependencies()) {
+                associationBuilder.getMap().values().stream().forEach(System.out::print);
+            } else {
+                associationBuilder.getMap().values().stream().forEach(System.out::println);
+            }
 
         }
     }

@@ -24,7 +24,7 @@ public class AssociationBuilder {
 
     public void add(PackageId source, PackageId dependency) {
         if ((modPattern == null || modPattern.matcher(source.toString()).matches()) &&
-                (depPattern == null || depPattern.matcher(dependency.toString()).matches()) ) {
+                (dependency == null || depPattern == null || depPattern.matcher(dependency.toString()).matches()) ) {
             if (reverse) {
                 innerAdd(dependency, source);
             } else {
@@ -40,7 +40,9 @@ public class AssociationBuilder {
             association = new Association(source);
             map.put(str, association);
         }
-        association.add(dependency);
+        if (dependency != null) {
+            association.add(dependency);
+        }
     }
 
     public Map<String, Association> getMap() {

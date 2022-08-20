@@ -13,6 +13,7 @@ public class ArgParser {
     private boolean help;
     private boolean error;
     private boolean reverse;
+    private boolean noDependencies;
     private Pattern moduleRegexp;
     private Pattern dependencyRegexp;
     private List<String> paths = new ArrayList<>();
@@ -36,6 +37,9 @@ public class ArgParser {
                         case "-r" -> {
                             reverse = true;
                         }
+                        case "-n" -> {
+                            noDependencies = true;
+                        }
                         case "-m" -> {
                             module = true;
                         }
@@ -52,11 +56,13 @@ public class ArgParser {
     }
 
     public static String getUsage() {
-        return "[-r] [-m module_regexp] [-d dependecy_regexp] paths...\n" +
+        return "by Francesco Illuminati fillumina@gmail.com, ver 1.1 19-8-22\n" +
+                "[-r] [-n] [-m module_regexp] [-d dependecy_regexp] paths...\n" +
                 "where:\n" +
                 "-r reverse module and dependencies\n" +
-                "-m set a module regexp filter\n" +
-                "-d set a dependency regexp filter\n" +
+                "-n print only project names without dependencies\n" +
+                "-m regexp set a module filter\n" +
+                "-d regexp set a dependency filter\n" +
                 "paths... path list to search for pom.xml\n";
     }
 
@@ -84,10 +90,15 @@ public class ArgParser {
         return error;
     }
 
+    public boolean isNoDependencies() {
+        return noDependencies;
+    }
+
     @Override
     public String toString() {
         return "arguments passed:" +
                 (reverse ? "\nreverse=" + reverse : "") +
+                (noDependencies ? "\no dependencies=" + noDependencies : "") +
                 (moduleRegexp != null ? "\nmodule regexp=" + moduleRegexp : "") +
                 (dependencyRegexp != null ? "\ndependency regexp=" + dependencyRegexp : "") +
                 "\npaths=" + paths.toString();

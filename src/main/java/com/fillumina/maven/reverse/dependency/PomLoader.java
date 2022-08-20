@@ -22,7 +22,7 @@ public class PomLoader {
 
     private PomLoader() {}
 
-    public void loader(File pomFile, AssociationBuilder associationBuilder) {
+    public void loader(File pomFile, AssociationBuilder associationBuilder, boolean noDependencies) {
         // Instantiate the Factory
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
@@ -41,9 +41,13 @@ public class PomLoader {
             // http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work
             doc.getDocumentElement().normalize();
 
-            PackageId name = extractProject(doc.getDocumentElement());
-            parseDependency(doc, name, "dependency", associationBuilder);
-            parseDependency(doc, name, "plugin", associationBuilder);
+            PackageId pkgName = extractProject(doc.getDocumentElement());
+            if (noDependencies) {
+                associationBuilder.add(pkgName, null);
+            } else {
+                parseDependency(doc, pkgName, "dependency", associationBuilder);
+                parseDependency(doc, pkgName, "plugin", associationBuilder);
+            }
 
         } catch (ParserConfigurationException | SAXException | IOException e) {
             throw new RuntimeException(e);
