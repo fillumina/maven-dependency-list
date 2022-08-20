@@ -5,12 +5,35 @@
   <artifactId>maven-dependency-list</artifactId>
   <version>1.1</version>
   <packaging>jar</packaging>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>  
+  </licenses>
+
+  <scm>
+    <connection>scm:git:git@github.com:maven-dependency-list.git</connection>
+    <url>git@github.com:fillumina/maven-dependency-list</url>
+    <developerConnection>scm:git:git@github.com:fillumina/maven-dependency-list.git</developerConnection>
+  </scm>
+
+  <developers>
+    <developer>
+      <name>Francesco Illuminati</name>
+      <email>fillumina@gmail.com</email>
+    </developer>
+  </developers>
+  
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <exec.mainClass>com.fillumina.maven.reverse.dependency.MavenReverseDependency</exec.mainClass>
   </properties>
+
   <build>
     <plugins>
       <plugin>
