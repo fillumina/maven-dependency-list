@@ -6,6 +6,8 @@ It accepts the following parameters:
 
 - `-r` lists owning module for each dependency instead of the dependencies for each module.
 
+- `-n` lists only modules without dependencies
+
 - `-m module-regexp` specifies a regexp filter for mudule names
 
 - `-d dependency-regexp` specifies a regexp filter for dependency names
