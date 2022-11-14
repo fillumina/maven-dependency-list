@@ -68,19 +68,19 @@ public class MavenReverseDependency {
             final boolean makeBackupCopy = arguments.isMakeBackupCopy();
 
             for (Path pomPath : pomPaths) {
-                String pom = Files.readString(pomPath);
+                String pomContent = Files.readString(pomPath);
                 if (changeArtifactMode) {
+                    Pom pom = new Pom(pomContent, associationBuilder, true);
                     if (moduleRegexp != null) {
-                        PackageId pkg = PomLoader.INSTANCE.loader(pom, associationBuilder, true);
+                        PackageId pkg = pom.getPomPackage();
                         String pkgName = pkg.toString();
                         if (moduleRegexp != null && !moduleRegexp.matcher(pkgName).matches()) {
                             System.out.println("skipping " + pkgName + " ...");
                             continue;
                         }
                     }
-                    CharSequence modifiedPom =
-                            // add pom module filter and
-                            PomModifier.INSTANCE.modify(pom, artifactToChange, newVersion);
+                    CharSequence modifiedPom = PomModifier.INSTANCE.modify(
+                            pomContent, pom.getPropertyMap(), artifactToChange, newVersion);
                     if (modifiedPom != null) {
                         if (makeBackupCopy) {
                             final File pomFile = pomPath.toAbsolutePath().normalize().toFile();
@@ -93,7 +93,7 @@ public class MavenReverseDependency {
                         System.out.println("modified artifact in " + pomPath.toString());
                     }
                 } else {
-                    PomLoader.INSTANCE.loader(pom, associationBuilder, noDependencies);
+                    new Pom(pomContent, associationBuilder, noDependencies);
                 }
             }
 

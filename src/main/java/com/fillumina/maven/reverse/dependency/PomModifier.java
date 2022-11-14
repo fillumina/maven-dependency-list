@@ -1,6 +1,11 @@
 package com.fillumina.maven.reverse.dependency;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -13,12 +18,14 @@ public class PomModifier {
     private PomModifier() {
     }
 
-    public StringBuffer modify(String pom, PackageId packageId, String newVersion) throws IOException {
+    public StringBuffer modify(String pom, Map<String,String> propertyMap,
+            PackageId packageId, String newVersion) throws IOException {
         StringBuffer pomBuffer = new StringBuffer(pom);
-        return modifyBuffer(pomBuffer, packageId, newVersion);
+        return modifyBuffer(pomBuffer, propertyMap, packageId, newVersion);
     }
 
-    static StringBuffer modifyBuffer(StringBuffer pom, PackageId packageId, String newVersion) {
+    static StringBuffer modifyBuffer(StringBuffer pom, Map<String,String> propertyMap,
+            PackageId packageId, String newVersion) {
         boolean modified = false;
         int idx = 0;
         while (true) {
@@ -35,25 +42,85 @@ public class PomModifier {
                 isDependency = false;
                 startIndex = lastIndexPlugin;
             }
+            startIndex += (isDependency ? "<dependency>" : "<plugin>").length();
             int endIndex = isDependency
                     ? indexOf(pom.subSequence(startIndex, pom.length()), "</dependency>")
                     : indexOf(pom.subSequence(startIndex, pom.length()), "</plugin>");
             CharSequence block = pom.subSequence(startIndex, startIndex + endIndex);
-            final String groupId = "<groupId>" + packageId.getGroupId() + "</groupId>";
-            final int groupOfIndex = indexOf(block, groupId);
+            XmlTagFinder finder = new XmlTagFinder(block, startIndex);
+            final int groupOfIndex = finder.indexOf("groupId", packageId.getGroupId() );
             if (groupOfIndex != -1) {
-                final String oldVersion = "<version>" + packageId.getVersion() + "</version>";
-                final int versionIndex = indexOf(block, oldVersion);
-                if (versionIndex != -1) {
-                    final String subsitutedVersion = "<version>" + newVersion + "</version>";
-                    int pomVersionIndex = startIndex + versionIndex;
-                    pom.replace(pomVersionIndex, pomVersionIndex + oldVersion.length(), subsitutedVersion);
-                    modified = true;
+                String requiredVersion = packageId.getVersion();
+                String versionContent = extractVersionContent(block);
+                String actualVersion = substituteProperties(versionContent, propertyMap);
+                if (actualVersion != null && actualVersion.equals(requiredVersion)) {
+                    boolean isProperty = versionContent.matches("^\\$\\{(.*)\\}$");
+                    if (isProperty) {
+                        final String propertyName = versionContent.substring(2, versionContent.length() - 1);
+                        final String propertyContent = createProperty(propertyName, actualVersion);
+                        final String newPropertyContent = createProperty(propertyName, newVersion);
+                        final int propertyIndex = indexOf(pom, propertyContent);
+                        if (propertyIndex != -1) {
+                            pom.replace(propertyIndex, propertyIndex + propertyContent.length(), newPropertyContent);
+                        }
+                        modified = true;
+                    } else {
+                        final int versionIndex = finder.indexOf("version", versionContent);
+
+                        if (versionIndex != -1) {
+                            final String subsitutedVersion = "<version>" + newVersion + "</version>";
+                            final String oldVersion = "<version>" + versionContent + "</version>";
+                            pom.replace(versionIndex, versionIndex + oldVersion.length(), subsitutedVersion);
+                            modified = true;
+                        }
+                    }
                 }
             }
             idx += endIndex;
         }
         return modified ? pom : null;
+    }
+
+    static String createProperty(final String propertyName, String actualVersion) {
+        return "<" + propertyName + ">" + actualVersion + "</" + propertyName + ">";
+    }
+
+    static String substituteProperties(String content, Map<String, String> propertyMap) {
+        if (content == null || content.isBlank() || !content.contains("${")) {
+            return content;
+        }
+        List<String> properties = extractProperty(content);
+        String result = content;
+        for (String property : properties) {
+            String value = propertyMap.get(property);
+            if (value != null) {
+                result = result.replace("${" + property + "}", value);
+            }
+        }
+        return result;
+    }
+
+    private static final Pattern VERSION_EXTRACTOR = Pattern.compile("<version>(.*)</version>");
+    static String extractVersionContent(CharSequence cs) {
+        final Matcher matcher = VERSION_EXTRACTOR.matcher(cs);
+        return matcher.find() ? matcher.group(1) : null;
+    }
+
+    private static final Pattern PROPERTY_EXTRACTOR = Pattern.compile("\\$\\{(.*)\\}");
+    static List<String> extractProperty(CharSequence cs) {
+        List<String> list = new ArrayList<>();
+        Matcher matcher = PROPERTY_EXTRACTOR.matcher(cs);
+        while (matcher.find()) {
+            list.add(matcher.group(1));
+        }
+        return list;
+    }
+
+    /**
+     * Search for the first occurrence of the given string.
+     */
+    static int ignoringNestedIndexOf(CharSequence sequence, String search) {
+        return 0;
     }
 
     /**

@@ -13,6 +13,15 @@ public class PackageId {
     private final String version;
     private final String str;
 
+    public static PackageId parse(String str) {
+        String[] fields = str.split(":");
+        switch (fields.length) {
+            case 2: return new PackageId(fields[0], fields[1], null);
+            case 3: return new PackageId(fields[0], fields[1], fields[2]);
+        }
+        throw new IllegalArgumentException("expected 2 or 3 fields, was: " + str);
+    }
+
     public PackageId(String groupId, String artifactId, String version) {
         this.groupId = groupId;
         this.artifactId = artifactId;
