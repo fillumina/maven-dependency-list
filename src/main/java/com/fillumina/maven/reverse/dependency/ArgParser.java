@@ -9,6 +9,33 @@ import java.util.regex.Pattern;
  * @author Francesco Illuminati <fillumina@gmail.com>
  */
 public class ArgParser {
+    private static final String HELP_LONG = "--help";
+    private static final String HELP_SHORT = "-h";
+    private static final String FULL_STACKTRACE = "-j";
+    private static final String CHANGE_ARTIFACT = "-c";
+    private static final String BACKUP_COPY = "-b";
+    private static final String DEPENDENCY = "-d";
+    private static final String MODULE = "-m";
+    private static final String NO_DEPENCENCIES = "-n";
+    private static final String REVERSE = "-r";
+
+    private static final String USAGE =
+        "by Francesco Illuminati fillumina@gmail.com - https://github.com/fillumina/maven-dependency-list - ver 1.2 13-11-22\n" +
+        "List and change package versions in a directory tree of maven pom.xml with filters.\n" +
+        "options: [" + HELP_SHORT + "|" + HELP_LONG + "] [" + REVERSE + "] [" + NO_DEPENCENCIES +"] [" + MODULE + " module_regexp] " +
+            "[" + DEPENDENCY + " dependecy_regexp] [" + CHANGE_ARTIFACT + " group:artifact:ver:new-ver] " +
+            "[" + BACKUP_COPY + "] paths...\n" +
+        "where:\n" +
+        HELP_SHORT + " or " + HELP_LONG + " print this help\n" +
+        REVERSE + " reverse module and dependencies\n" +
+        NO_DEPENCENCIES + " print only project names without dependencies\n" +
+        MODULE + " regexp set a module filter\n" +
+        DEPENDENCY + " regexp set a dependency/plugin filter\n" +
+        CHANGE_ARTIFACT + " group:artifact:ver:new-ver change version of all package occurences\n" +
+        "   cannot be mixed with dependency filter (" + DEPENDENCY + "), can use module filtering (" + MODULE + ")\n" +
+        BACKUP_COPY + " make a backup copy of the changed pom.xml -> pom.xml.bak (only with " + CHANGE_ARTIFACT + ")\n" +
+        FULL_STACKTRACE + " print a full java exception stacktrace\n" +
+        "paths... path list to search for pom.xml\n";
 
     private boolean help;
     private boolean error;
@@ -17,34 +44,57 @@ public class ArgParser {
     private Pattern moduleRegexp;
     private Pattern dependencyRegexp;
     private List<String> paths = new ArrayList<>();
+    private PackageId artifactToChange;
+    private String newVersion;
+    private boolean makeBackupCopy;
+    private boolean fullStacktrace;
 
     public ArgParser(String[] args) {
-        boolean module = false, dependence = false;
+        boolean module = false, dependency = false, changeArtifact = false;
         if (args == null || args.length == 0) {
             error = true;
         } else {
             for (String s : args) {
-                if ("-h".equals(s) || "--help".equals(s)) {
+                if (HELP_SHORT.equals(s) || HELP_LONG.equals(s)) {
                     help = true;
                 } else if (module) {
                     moduleRegexp = Pattern.compile("^.*" + s + ".*$");
                     module = false;
-                } else if (dependence) {
+                } else if (dependency) {
                     dependencyRegexp = Pattern.compile("^.*" + s + ".*$");
-                    dependence = false;
+                    dependency = false;
+                } else if (changeArtifact) {
+                    String[] fields = s.split(":");
+                    if (fields.length == 4) {
+                        artifactToChange = new PackageId(fields[0], fields[1], fields[2]);
+                        newVersion = fields[3];
+                    } else {
+                        throw new IllegalArgumentException(
+                                "expected 4 fields separated by ':', was= '" + s + "'");
+                    }
+                    changeArtifact = false;
                 } else {
                     switch (s) {
-                        case "-r" -> {
+                        case REVERSE -> {
                             reverse = true;
                         }
-                        case "-n" -> {
+                        case NO_DEPENCENCIES -> {
                             noDependencies = true;
                         }
-                        case "-m" -> {
+                        case MODULE -> {
                             module = true;
                         }
-                        case "-d" -> {
-                            dependence = true;
+                        case DEPENDENCY -> {
+                            dependency = true;
+                        }
+                        case BACKUP_COPY -> {
+                            makeBackupCopy = true;
+                        }
+                        case CHANGE_ARTIFACT -> {
+                            changeArtifact = true;
+                        }
+                        case FULL_STACKTRACE -> {
+                            fullStacktrace = true;
                         }
                         default -> {
                             paths.add(s);
@@ -53,17 +103,14 @@ public class ArgParser {
                 }
             }
         }
+        if (artifactToChange != null && dependencyRegexp != null) {
+            throw new IllegalArgumentException(
+                    "change artifact (-c) cannot be mixed with dependency filter (-d)");
+        }
     }
 
     public static String getUsage() {
-        return "by Francesco Illuminati fillumina@gmail.com, ver 1.1 19-8-22\n" +
-                "[-r] [-n] [-m module_regexp] [-d dependecy_regexp] paths...\n" +
-                "where:\n" +
-                "-r reverse module and dependencies\n" +
-                "-n print only project names without dependencies\n" +
-                "-m regexp set a module filter\n" +
-                "-d regexp set a dependency filter\n" +
-                "paths... path list to search for pom.xml\n";
+        return USAGE;
     }
 
     public boolean isReverse() {
@@ -94,6 +141,22 @@ public class ArgParser {
         return noDependencies;
     }
 
+    public PackageId getArtifactToChange() {
+        return artifactToChange;
+    }
+
+    public String getNewVersion() {
+        return newVersion;
+    }
+
+    public boolean isMakeBackupCopy() {
+        return makeBackupCopy;
+    }
+
+    public boolean isFullStacktrace() {
+        return fullStacktrace;
+    }
+
     @Override
     public String toString() {
         return "arguments passed:" +
@@ -101,6 +164,8 @@ public class ArgParser {
                 (noDependencies ? "\no dependencies=" + noDependencies : "") +
                 (moduleRegexp != null ? "\nmodule regexp=" + moduleRegexp : "") +
                 (dependencyRegexp != null ? "\ndependency regexp=" + dependencyRegexp : "") +
+                (artifactToChange != null ? "\nartifact to change=" + artifactToChange : "") +
+                (makeBackupCopy ? "\nmake backup copy=" + makeBackupCopy : "") +
                 "\npaths=" + paths.toString();
     }
 

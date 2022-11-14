@@ -1,10 +1,15 @@
 package com.fillumina.maven.reverse.dependency;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -14,13 +19,26 @@ public class MavenReverseDependency {
 
     public static void main(String[] args) throws IOException {
         ArgParser arguments = new ArgParser(args);
+        try {
+            execution(arguments);
+        } catch (Throwable t) {
+            if (arguments.isFullStacktrace()) {
+                t.printStackTrace();
+            } else {
+                System.err.println("ERROR: " + t.getMessage());
+            }
+            System.exit(1);
+        }
+    }
+
+    private static void execution(ArgParser arguments) throws IOException {
         if (arguments.isError() || arguments.isHelp()) {
             System.out.println(ArgParser.getUsage());
 
         } else {
             System.out.println(arguments);
 
-            List<Path> poms = new ArrayList<>();
+            List<Path> pomPaths = new ArrayList<>();
 
             if (arguments.isReverse()) {
                 System.out.println("\nmodules using dependencies\n");
@@ -31,26 +49,62 @@ public class MavenReverseDependency {
             for (String folderName : arguments.getFolderNames()) {
                 System.out.println("searching in: " + folderName);
                 Path path = Paths.get(folderName);
-                poms.addAll(PomTreeExtractor.readAllPomsInTree(path));
+                pomPaths.addAll(PomTreeExtractor.readAllPomsInTree(path));
             }
 
+            final Pattern moduleRegexp = arguments.getModuleRegexp();
+
             AssociationBuilder associationBuilder = new AssociationBuilder(
-                    arguments.getModuleRegexp(),
+                    moduleRegexp,
                     arguments.getDependencyRegexp(),
                     arguments.isReverse());
 
             System.out.println("");
-            poms.forEach(p -> PomLoader.INSTANCE.loader(p.toFile(), associationBuilder,
-                    arguments.isNoDependencies()));
 
-            if (arguments.isNoDependencies()) {
-                associationBuilder.getMap().values().stream().forEach(System.out::print);
-            } else {
-                associationBuilder.getMap().values().stream().forEach(System.out::println);
+            final boolean noDependencies = arguments.isNoDependencies();
+            final PackageId artifactToChange = arguments.getArtifactToChange();
+            final String newVersion = arguments.getNewVersion();
+            final boolean changeArtifactMode = artifactToChange != null && newVersion != null;
+            final boolean makeBackupCopy = arguments.isMakeBackupCopy();
+
+            for (Path pomPath : pomPaths) {
+                String pom = Files.readString(pomPath);
+                if (changeArtifactMode) {
+                    if (moduleRegexp != null) {
+                        PackageId pkg = PomLoader.INSTANCE.loader(pom, associationBuilder, true);
+                        String pkgName = pkg.toString();
+                        if (moduleRegexp != null && !moduleRegexp.matcher(pkgName).matches()) {
+                            System.out.println("skipping " + pkgName + " ...");
+                            continue;
+                        }
+                    }
+                    CharSequence modifiedPom =
+                            // add pom module filter and
+                            PomModifier.INSTANCE.modify(pom, artifactToChange, newVersion);
+                    if (modifiedPom != null) {
+                        if (makeBackupCopy) {
+                            final File pomFile = pomPath.toAbsolutePath().normalize().toFile();
+                            String bkFilename = pomFile.getCanonicalPath() + ".bak";
+                            File bkPomFile = new File(bkFilename);
+                            System.out.println("backup " + pomFile.toString() + " -> " + bkPomFile.toString());
+                            Files.move(pomFile.toPath(), bkPomFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        }
+                        Files.writeString(pomPath, modifiedPom, StandardOpenOption.CREATE);
+                        System.out.println("modified artifact in " + pomPath.toString());
+                    }
+                } else {
+                    PomLoader.INSTANCE.loader(pom, associationBuilder, noDependencies);
+                }
             }
 
+            if (!changeArtifactMode) {
+                if (noDependencies) {
+                    associationBuilder.getMap().values().stream().forEach(System.out::print);
+                } else {
+                    associationBuilder.getMap().values().stream().forEach(System.out::println);
+                }
+            }
         }
     }
-
 
 }

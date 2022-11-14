@@ -1,7 +1,8 @@
 package com.fillumina.maven.reverse.dependency;
 
-import java.io.File;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -22,7 +23,7 @@ public class PomLoader {
 
     private PomLoader() {}
 
-    public void loader(File pomFile, AssociationBuilder associationBuilder, boolean noDependencies) {
+    public PackageId loader(String pom, AssociationBuilder associationBuilder, boolean noDependencies) {
         // Instantiate the Factory
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
@@ -35,7 +36,8 @@ public class PomLoader {
             // parse XML file
             DocumentBuilder db = dbf.newDocumentBuilder();
 
-            Document doc = db.parse(pomFile);
+            InputStream is = new ByteArrayInputStream(pom.getBytes());
+            Document doc = db.parse(is);
 
             // optional, but recommended
             // http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work
@@ -49,6 +51,7 @@ public class PomLoader {
                 parseDependency(doc, pkgName, "plugin", associationBuilder);
             }
 
+            return pkgName;
         } catch (ParserConfigurationException | SAXException | IOException e) {
             throw new RuntimeException(e);
         }
