@@ -89,14 +89,12 @@ public class XmlParser {
     }
 
     private static final Pattern COMMENT = Pattern.compile("(<!--.*-->)");
-    private static final Pattern QUOTE = Pattern.compile("(\".*\")");
 
     private List<XmlTag> tree;
 
     public XmlParser(CharSequence buf) {
         Map<Integer,Integer> jumpMap = new HashMap<>();
         createCommentJumpMap(buf, jumpMap, COMMENT);
-        createCommentJumpMap(buf, jumpMap, QUOTE);
 
         List<XmlTag> list = createTagList(buf, jumpMap);
         addChildren(list, buf);
@@ -153,6 +151,9 @@ public class XmlParser {
             Integer jump = jumpMap.get(i);
             if (jump != null) {
                 i = jump;
+                if (i >= length) {
+                    break;
+                }
             }
 
             char c = buf.charAt(i);
@@ -174,7 +175,6 @@ public class XmlParser {
     private void createCommentJumpMap(CharSequence buf, Map<Integer,Integer> map, Pattern pattern) {
         Matcher matcher = pattern.matcher(buf);
         while (matcher.find()) {
-            matcher.start(1);
             map.put(matcher.start(1), matcher.end(1));
         }
     }

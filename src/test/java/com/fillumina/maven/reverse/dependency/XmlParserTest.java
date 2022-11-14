@@ -115,4 +115,20 @@ public class XmlParserTest {
         assertEquals(xml.length(), three.getEnd());
         assertEquals(1, three.getChildren().size());
     }
+
+    @Test
+    public void shouldIgnoreComments() {
+        final String xml1 = "<one>content one</one>";
+        final String xml3 = "  <!--<three><two>content two</two></three>-->";
+        String xml = xml1 + xml3;
+        XmlParser parser = new XmlParser(xml);
+        List<XmlTag> list = parser.getTree();
+        assertEquals(1, list.size());
+
+        XmlTag one = list.get(0);
+        assertEquals("one", one.getName());
+        assertEquals("content one", one.getContent());
+        assertEquals(0, one.getStart());
+        assertEquals(xml1.length(), one.getEnd());
+    }
 }
