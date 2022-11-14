@@ -54,7 +54,8 @@ public class PomModifier {
                 String versionContent = extractVersionContent(block);
                 String actualVersion = substituteProperties(versionContent, propertyMap);
                 if (actualVersion != null && actualVersion.equals(requiredVersion)) {
-                    boolean isProperty = versionContent.matches("^\\$\\{(.*)\\}$");
+                    boolean isProperty = versionContent.matches("^\\$\\{(.*)\\}$") &&
+                            countOccurrences(pom, versionContent) == 1;
                     if (isProperty) {
                         final String propertyName = versionContent.substring(2, versionContent.length() - 1);
                         final String propertyContent = createProperty(propertyName, actualVersion);
@@ -119,19 +120,31 @@ public class PomModifier {
     /**
      * Search for the first occurrence of the given string.
      */
-    static int ignoringNestedIndexOf(CharSequence sequence, String search) {
-        return 0;
+    static int countOccurrences(CharSequence sequence, String search) {
+        int counter = 0;
+        int index = -1;
+        while(true) {
+            index = indexOf(sequence, search, index + 1);
+            if (index == -1) {
+                return counter;
+            }
+            counter++;
+        }
+    }
+
+    static int indexOf(CharSequence sequence, String search) {
+        return indexOf(sequence, search, 0);
     }
 
     /**
      * Search for the first occurrence of the given string.
      */
-    static int indexOf(CharSequence sequence, String search) {
+    static int indexOf(CharSequence sequence, String search, int startIndex) {
         final int searchLength = search.length();
         final int sequenceLength = sequence.length();
         int searchIndex = 0;
         char searchCharacter = search.charAt(searchIndex);
-        for (int idx = 0; idx < sequenceLength; idx++) {
+        for (int idx = startIndex; idx < sequenceLength; idx++) {
             char sequenceCharacter = sequence.charAt(idx);
             if (sequenceCharacter == searchCharacter) {
                 searchIndex++;

@@ -1,6 +1,7 @@
 package com.fillumina.maven.reverse.dependency;
 
 import static com.fillumina.maven.reverse.dependency.PomFixture.*;
+import static com.fillumina.maven.reverse.dependency.PomModifier.countOccurrences;
 import static com.fillumina.maven.reverse.dependency.PomModifier.createProperty;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,6 +15,17 @@ import org.junit.jupiter.api.Test;
  * @author Francesco Illuminati <fillumina@gmail.com>
  */
 public class PomModifierTest {
+
+    @Test
+    public void shouldCountOccurrences() {
+        assertEquals(0, countOccurrences("one two three", "four"));
+        assertEquals(1, countOccurrences("one two three", "one"));
+        assertEquals(1, countOccurrences("one two three", "two"));
+        assertEquals(1, countOccurrences("one two three", "three"));
+        assertEquals(2, countOccurrences("one two three two", "two"));
+        assertEquals(2, countOccurrences("onetwothreetwo", "two"));
+        assertEquals(3, countOccurrences("onetwotwothreetwo", "two"));
+    }
 
     @Test
     public void shouldFindIndexOf() {
@@ -192,6 +204,27 @@ public class PomModifierTest {
         assertVersionJarPlugin(noSpaceResult, "3.2.2");
         assertVersionCompilerPlugin(noSpaceResult, "3.8.1");
     }
+
+    @Test
+    public void shouldNotUpdateThePropertyIfItsUsedByMoreThanOneArtifact() {
+        StringBuffer buf = new StringBuffer(POM);
+        PackageId packageId = new PackageId(
+                "org.springframework.boot", "spring-boot-starter-data-jpa", "2.7.3");
+
+        Map<String,String> propMap = Map.of("spring-boot.version", "2.7.3");
+        CharSequence modified = PomModifier.modifyBuffer(buf, propMap, packageId, "1.2.3");
+
+        assertNotNull(modified);
+
+        final String result = buf.toString().replaceAll("\\s", "");
+
+        String expected = "<groupId>org.springframework.boot</groupId>" +
+            "<artifactId>spring-boot-starter-data-jpa</artifactId>" +
+            "<version>1.2.3</version>";
+
+        assertTrue(result.contains(expected));
+    }
+
 
     private void assertProperty(String content, String propertyName, String value) {
         String property = createProperty(propertyName, value);

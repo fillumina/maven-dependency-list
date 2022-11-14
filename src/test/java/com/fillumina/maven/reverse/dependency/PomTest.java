@@ -32,7 +32,7 @@ public class PomTest {
                 .stream()
                 .collect(Collectors.toMap(PackageId::getArtifactId, Function.identity()));
 
-        assertEquals(10, map.size());
+        assertEquals(11, map.size());
 
         assertPackageId(map.get("junit-jupiter-params"), "org.junit.jupiter:junit-jupiter-params:5.6.0");
         assertPackageId(map.get("maven-jar-plugin"), "org.apache.maven.plugins:maven-jar-plugin:3.2.2");
@@ -43,6 +43,7 @@ public class PomTest {
 
         assertPackageId(map.get("liquibase-maven-plugin"), "org.liquibase:liquibase-maven-plugin:4.15.0");
         assertPackageId(map.get("spring-boot-starter-data-jpa"), "org.springframework.boot:spring-boot-starter-data-jpa:2.7.3");
+        assertPackageId(map.get("spring-boot"), "org.springframework.boot:spring-boot:2.7.3");
         assertPackageId(map.get("liquibase-core"), "org.liquibase:liquibase-core:4.15.0");
         assertPackageId(map.get("liquibase-hibernate5"), "org.liquibase.ext:liquibase-hibernate5:4.15.0");
     }

@@ -130,6 +130,11 @@ public class PomFixture {
                         <artifactId>spring-boot-starter-data-jpa</artifactId>
                         <version>${spring-boot.version}</version>
                     </dependency>
+                    <dependency>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot</artifactId>
+                        <version>${spring-boot.version}</version>
+                    </dependency>
                 </dependencies>
                 <!-- moved to the bottom to make it harder to guess -->
                 <version>4.15.0</version>
