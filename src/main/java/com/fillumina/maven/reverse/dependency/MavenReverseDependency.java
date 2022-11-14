@@ -57,7 +57,8 @@ public class MavenReverseDependency {
             AssociationBuilder associationBuilder = new AssociationBuilder(
                     moduleRegexp,
                     arguments.getDependencyRegexp(),
-                    arguments.isReverse());
+                    arguments.isReverse(),
+                    arguments.isOmitNullVersion());
 
             System.out.println("");
 

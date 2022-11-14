@@ -16,7 +16,7 @@ public class PomTest {
 
     @Test
     public void shouldReadTheVersions() {
-        AssociationBuilder associationBuilder = new AssociationBuilder(null, null, false);
+        AssociationBuilder associationBuilder = new AssociationBuilder(null, null, false, false);
 
         Pom pom = new Pom(POM, associationBuilder, false);
         assertNotNull(pom);

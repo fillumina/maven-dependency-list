@@ -18,6 +18,7 @@ public class ArgParser {
     private static final String MODULE = "-m";
     private static final String NO_DEPENCENCIES = "-n";
     private static final String REVERSE = "-r";
+    private static final String OMIT_NULL_VERSION = "-v";
 
     private static final String USAGE =
         "by Francesco Illuminati fillumina@gmail.com - https://github.com/fillumina/maven-dependency-list - ver 1.2 13-11-22\n" +
@@ -31,6 +32,7 @@ public class ArgParser {
         NO_DEPENCENCIES + " print only project names without dependencies\n" +
         MODULE + " regexp set a module filter\n" +
         DEPENDENCY + " regexp set a dependency/plugin filter\n" +
+        OMIT_NULL_VERSION + " omit dependencies/plugins with null version\n" +
         CHANGE_ARTIFACT + " group:artifact:ver:new-ver change version of all package occurences\n" +
         "   cannot be mixed with dependency filter (" + DEPENDENCY + "), can use module filtering (" + MODULE + ")\n" +
         BACKUP_COPY + " make a backup copy of the changed pom.xml -> pom.xml.bak (only with " + CHANGE_ARTIFACT + ")\n" +
@@ -48,6 +50,7 @@ public class ArgParser {
     private String newVersion;
     private boolean makeBackupCopy;
     private boolean fullStacktrace;
+    private boolean omitNullVersion;
 
     public ArgParser(String[] args) {
         boolean module = false, dependency = false, changeArtifact = false;
@@ -95,6 +98,9 @@ public class ArgParser {
                         }
                         case FULL_STACKTRACE -> {
                             fullStacktrace = true;
+                        }
+                        case OMIT_NULL_VERSION -> {
+                            omitNullVersion = true;
                         }
                         default -> {
                             paths.add(s);
@@ -157,6 +163,10 @@ public class ArgParser {
         return fullStacktrace;
     }
 
+    public boolean isOmitNullVersion() {
+        return omitNullVersion;
+    }
+
     @Override
     public String toString() {
         return "arguments passed:" +
@@ -164,6 +174,7 @@ public class ArgParser {
                 (noDependencies ? "\no dependencies=" + noDependencies : "") +
                 (moduleRegexp != null ? "\nmodule regexp=" + moduleRegexp : "") +
                 (dependencyRegexp != null ? "\ndependency regexp=" + dependencyRegexp : "") +
+                (omitNullVersion ? "\nomit null version=" + omitNullVersion : "") +
                 (artifactToChange != null ? "\nartifact to change=" + artifactToChange : "") +
                 (makeBackupCopy ? "\nmake backup copy=" + makeBackupCopy : "") +
                 "\npaths=" + paths.toString();
