@@ -29,7 +29,7 @@ public class PomModifier {
         boolean modified = false;
         int idx = 0;
         while (true) {
-            final String artifactId = "<artifactId>" + packageId.getArtifactId() + "</artifactId>";
+            final String artifactId = createTag("artifactId", packageId.getArtifactId());
             idx = pom.indexOf(artifactId, idx);
             if (idx == -1) {
                 break;
@@ -58,8 +58,8 @@ public class PomModifier {
                             countOccurrences(pom, versionContent) == 1;
                     if (isProperty) {
                         final String propertyName = versionContent.substring(2, versionContent.length() - 1);
-                        final String propertyContent = createProperty(propertyName, actualVersion);
-                        final String newPropertyContent = createProperty(propertyName, newVersion);
+                        final String propertyContent = createTag(propertyName, actualVersion);
+                        final String newPropertyContent = createTag(propertyName, newVersion);
                         final int propertyIndex = indexOf(pom, propertyContent);
                         if (propertyIndex != -1) {
                             pom.replace(propertyIndex, propertyIndex + propertyContent.length(), newPropertyContent);
@@ -69,8 +69,8 @@ public class PomModifier {
                         final int versionIndex = finder.indexOf("version", versionContent);
 
                         if (versionIndex != -1) {
-                            final String subsitutedVersion = "<version>" + newVersion + "</version>";
-                            final String oldVersion = "<version>" + versionContent + "</version>";
+                            final String subsitutedVersion = createTag("version", newVersion);
+                            final String oldVersion = createTag("version", versionContent);
                             pom.replace(versionIndex, versionIndex + oldVersion.length(), subsitutedVersion);
                             modified = true;
                         }
@@ -82,8 +82,8 @@ public class PomModifier {
         return modified ? pom : null;
     }
 
-    static String createProperty(final String propertyName, String actualVersion) {
-        return "<" + propertyName + ">" + actualVersion + "</" + propertyName + ">";
+    static String createTag(final String name, String value) {
+        return "<" + name + ">" + value + "</" + name + ">";
     }
 
     static String substituteProperties(String content, Map<String, String> propertyMap) {

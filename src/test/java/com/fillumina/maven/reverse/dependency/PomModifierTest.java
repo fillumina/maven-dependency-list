@@ -2,13 +2,13 @@ package com.fillumina.maven.reverse.dependency;
 
 import static com.fillumina.maven.reverse.dependency.PomFixture.*;
 import static com.fillumina.maven.reverse.dependency.PomModifier.countOccurrences;
-import static com.fillumina.maven.reverse.dependency.PomModifier.createProperty;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
+import static com.fillumina.maven.reverse.dependency.PomModifier.createTag;
 
 /**
  *
@@ -227,7 +227,7 @@ public class PomModifierTest {
 
 
     private void assertProperty(String content, String propertyName, String value) {
-        String property = createProperty(propertyName, value);
+        String property = createTag(propertyName, value);
         assertTrue(content.contains(property));
     }
 }
