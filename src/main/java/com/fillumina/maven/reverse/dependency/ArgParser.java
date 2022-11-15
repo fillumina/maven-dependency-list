@@ -21,7 +21,7 @@ public class ArgParser {
     private static final String OMIT_NULL_VERSION = "-v";
 
     private static final String USAGE =
-        "by Francesco Illuminati fillumina@gmail.com - https://github.com/fillumina/maven-dependency-list - ver 1.2 13-11-22\n" +
+        "by Francesco Illuminati fillumina@gmail.com - https://github.com/fillumina/maven-dependency-list - ver 1.2 15/11/22\n" +
         "List and change package versions in a directory tree of maven pom.xml with filters.\n" +
         "options: [" + HELP_SHORT + "|" + HELP_LONG + "] [" + REVERSE + "] [" + NO_DEPENCENCIES +"] [" + MODULE + " module_regexp] " +
             "[" + DEPENDENCY + " dependecy_regexp] [" + CHANGE_ARTIFACT + " group:artifact:ver:new-ver] " +

@@ -4,6 +4,14 @@ It **browses** trees of java `maven` projects (`pom.xml`) listing the dependenci
 
 It is a `java` command line application embedded into a unix shell script (`run-maven-dependency-list.sh`) and needs a compatible [JRE 8](https://www.java.com/en/download/manual.jsp) available in the system. If you don't have access to a unix shell (`bash`) you can call it directly with: `java -jar maven-dependency-list-1.2.jar`  where the `jar` file is created in the `target` folder after compilation (`mvn clean install`).
 
+## Versions
+
+- **1.2** 15/11/22 adds the possibility to change the version of a dependency/plugin
+
+- **1.1** 20/08/22 various fixes
+
+- **1.0** 13/08/22 first version
+
 ## Scenario
 
 I like to build my projects around a lot of different reusable packages to increase reusability, testing and promoting single-responsibility principle ([SRP]([Single-responsibility principle - Wikipedia](https://en.wikipedia.org/wiki/Single-responsibility_principle) )). 
