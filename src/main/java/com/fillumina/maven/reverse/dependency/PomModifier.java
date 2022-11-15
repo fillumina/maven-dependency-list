@@ -167,6 +167,7 @@ public class PomModifier {
             } else if (searchIndex != 0) {
                 searchIndex = 0;
                 searchCharacter = search.charAt(searchIndex);
+                idx--;
             }
         }
         return -1;
@@ -190,6 +191,7 @@ public class PomModifier {
             } else if (searchIndex != searchLength) {
                 searchIndex = searchLength;
                 searchCharacter = search.charAt(searchIndex);
+                idx++;
             }
         }
         return -1;
