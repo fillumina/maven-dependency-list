@@ -226,9 +226,4 @@ Assuming `run-maven-dependency-list.sh` as the chosen script name.
 
 ## Creating an executable script for *unix
 
-To create an executable script use the useful [gist](https://gist.github.com/briandealwis/782862/9cc9ef8a78af3bb78a692313f8bfa6fb76ab4663) which has been copied (with a reference added) to the project root. After compiling the code execute the script `run-script-creator.sh` specifying as parameter the output script name.
-i.e:
-
-```
- ./run-script-creator.sh run-maven-dependency.sh  
-```
+To create an executable script use the useful [gist](https://gist.github.com/briandealwis/782862/9cc9ef8a78af3bb78a692313f8bfa6fb76ab4663) which has been adapted and copied (with a reference added) to the project root. After compiling the code execute the script `run-script-creator.sh` to generate the final script `run-maven-dependency-list`.
