@@ -14,7 +14,7 @@ It is a `java` command line application embedded into a unix shell script (`run-
 
 ## Scenario
 
-I like to build my projects around a lot of different reusable packages to increase reusability, testing and promoting single-responsibility principle ([SRP]([Single-responsibility principle - Wikipedia](https://en.wikipedia.org/wiki/Single-responsibility_principle) )). 
+I like to build my projects around a lot of different reusable packages to increase reusability, testing and promoting single-responsibility principle ([SRP](https://en.wikipedia.org/wiki/Single-responsibility_principle)). 
 
 This takes as a drawback a difficulty in managing versions: if a package is used in many different projects it is difficult to track what version each project is using (especially if they are a lot!). Moreover I want my build to be replicable so package version should stay consistent with the code (never change a code once the version has been published). 
 
