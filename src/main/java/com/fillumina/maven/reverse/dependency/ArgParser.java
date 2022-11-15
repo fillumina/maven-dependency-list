@@ -9,6 +9,9 @@ import java.util.regex.Pattern;
  * @author Francesco Illuminati <fillumina@gmail.com>
  */
 public class ArgParser {
+    private static final String VERSION = "1.2.1";
+    private static final String VERSION_DATA = "15/11/22";
+
     private static final String HELP_LONG = "--help";
     private static final String HELP_SHORT = "-h";
     private static final String FULL_STACKTRACE = "-j";
@@ -21,7 +24,8 @@ public class ArgParser {
     private static final String OMIT_NULL_VERSION = "-v";
 
     private static final String USAGE =
-        "by Francesco Illuminati fillumina@gmail.com - https://github.com/fillumina/maven-dependency-list - ver 1.2 15/11/22\n" +
+        "by Francesco Illuminati fillumina@gmail.com - https://github.com/fillumina/maven-dependency-list " +
+            "- ver " + VERSION + " " + VERSION_DATA +"\n" +
         "List and change package versions in a directory tree of maven pom.xml with filters.\n" +
         "options: [" + HELP_SHORT + "|" + HELP_LONG + "] [" + REVERSE + "] [" + NO_DEPENCENCIES +"] [" + MODULE + " module_regexp] " +
             "[" + DEPENDENCY + " dependecy_regexp] [" + CHANGE_ARTIFACT + " group:artifact:ver:new-ver] " +
