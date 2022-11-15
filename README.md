@@ -6,6 +6,8 @@ It is a `java` command line application embedded into a unix shell script (`run-
 
 ## Versions
 
+- **1.2.1** 15/11/22 indexOf algorithm fix (corner case)
+
 - **1.2** 15/11/22 adds the possibility to change the version of a dependency/plugin
 
 - **1.1** 20/08/22 various fixes
