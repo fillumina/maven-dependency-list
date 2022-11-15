@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
  *
  * @author Francesco Illuminati <fillumina@gmail.com>
  */
-public class MavenReverseDependency {
+public class App {
 
     public static void main(String[] args) throws IOException {
         ArgParser arguments = new ArgParser(args);

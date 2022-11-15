@@ -117,6 +117,7 @@ public class Pom {
             final String property = version.substring(2, version.length() - 1);
             version = versionMap.get(property);
         }
+        // default groupId is 'org.apache.maven.pugins' if omitted
         // https://stackoverflow.com/questions/65527291/is-groupid-required-for-plugins-in-maven-pom-xml
         final String adjustedGroupId = groupId == null && isPlugin ? "org.apache.maven.pugins" : groupId;
         PackageId dependency = new PackageId(adjustedGroupId, artifactId, version);

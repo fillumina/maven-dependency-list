@@ -8,6 +8,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Changes the version of a dependency or a plugin in the original {@code pom.xml}. If the version
+ * is specified as a property (in the same file) it changes the property value unless the same
+ * property is shared with other dependencies or plugins, in which case it changes the version in
+ * place. <i>It doesn't manage properties defined outside the same {@code pom.xml}</i>.
  *
  * @author Francesco Illuminati <fillumina@gmail.com>
  */
@@ -18,13 +22,13 @@ public class PomModifier {
     private PomModifier() {
     }
 
-    public StringBuffer modify(String pom, Map<String,String> propertyMap,
+    public StringBuffer modify(String pom, Map<String, String> propertyMap,
             PackageId packageId, String newVersion) throws IOException {
         StringBuffer pomBuffer = new StringBuffer(pom);
         return modifyBuffer(pomBuffer, propertyMap, packageId, newVersion);
     }
 
-    static StringBuffer modifyBuffer(StringBuffer pom, Map<String,String> propertyMap,
+    static StringBuffer modifyBuffer(StringBuffer pom, Map<String, String> propertyMap,
             PackageId packageId, String newVersion) {
         boolean modified = false;
         int idx = 0;
@@ -48,7 +52,7 @@ public class PomModifier {
                     : indexOf(pom.subSequence(startIndex, pom.length()), "</plugin>");
             CharSequence block = pom.subSequence(startIndex, startIndex + endIndex);
             XmlTagFinder finder = new XmlTagFinder(block, startIndex);
-            final int groupOfIndex = finder.indexOf("groupId", packageId.getGroupId() );
+            final int groupOfIndex = finder.indexOf("groupId", packageId.getGroupId());
             if (groupOfIndex != -1) {
                 String requiredVersion = packageId.getVersion();
                 String versionContent = extractVersionContent(block);
@@ -57,12 +61,14 @@ public class PomModifier {
                     boolean isProperty = versionContent.matches("^\\$\\{(.*)\\}$") &&
                             countOccurrences(pom, versionContent) == 1;
                     if (isProperty) {
-                        final String propertyName = versionContent.substring(2, versionContent.length() - 1);
+                        final String propertyName = versionContent.substring(2, versionContent
+                                .length() - 1);
                         final String propertyContent = createTag(propertyName, actualVersion);
                         final String newPropertyContent = createTag(propertyName, newVersion);
                         final int propertyIndex = indexOf(pom, propertyContent);
                         if (propertyIndex != -1) {
-                            pom.replace(propertyIndex, propertyIndex + propertyContent.length(), newPropertyContent);
+                            pom.replace(propertyIndex, propertyIndex + propertyContent.length(),
+                                    newPropertyContent);
                         }
                         modified = true;
                     } else {
@@ -71,7 +77,8 @@ public class PomModifier {
                         if (versionIndex != -1) {
                             final String subsitutedVersion = createTag("version", newVersion);
                             final String oldVersion = createTag("version", versionContent);
-                            pom.replace(versionIndex, versionIndex + oldVersion.length(), subsitutedVersion);
+                            pom.replace(versionIndex, versionIndex + oldVersion.length(),
+                                    subsitutedVersion);
                             modified = true;
                         }
                     }
@@ -102,12 +109,14 @@ public class PomModifier {
     }
 
     private static final Pattern VERSION_EXTRACTOR = Pattern.compile("<version>(.*)</version>");
+
     static String extractVersionContent(CharSequence cs) {
         final Matcher matcher = VERSION_EXTRACTOR.matcher(cs);
         return matcher.find() ? matcher.group(1) : null;
     }
 
     private static final Pattern PROPERTY_EXTRACTOR = Pattern.compile("\\$\\{(.*)\\}");
+
     static List<String> extractProperty(CharSequence cs) {
         List<String> list = new ArrayList<>();
         Matcher matcher = PROPERTY_EXTRACTOR.matcher(cs);
@@ -118,12 +127,12 @@ public class PomModifier {
     }
 
     /**
-     * Search for the first occurrence of the given string.
+     * Counts how many occurrences of the given search string are in the sequence.
      */
     static int countOccurrences(CharSequence sequence, String search) {
         int counter = 0;
         int index = -1;
-        while(true) {
+        while (true) {
             index = indexOf(sequence, search, index + 1);
             if (index == -1) {
                 return counter;
@@ -132,12 +141,15 @@ public class PomModifier {
         }
     }
 
+    /**
+     * Searches for the first occurrence of the given string.
+     */
     static int indexOf(CharSequence sequence, String search) {
         return indexOf(sequence, search, 0);
     }
 
     /**
-     * Search for the first occurrence of the given string.
+     * Searches for the first occurrence of the given string starting from startIndex.
      */
     static int indexOf(CharSequence sequence, String search, int startIndex) {
         final int searchLength = search.length();
@@ -161,7 +173,7 @@ public class PomModifier {
     }
 
     /**
-     * Search backwards for the first occurrence of the given string.
+     * Searches backwards for the first occurrence of the given string.
      */
     static int lastIndexOf(CharSequence sequence, String search) {
         final int searchLength = search.length() - 1;

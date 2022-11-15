@@ -35,7 +35,7 @@ public class ArgParser {
         OMIT_NULL_VERSION + " omit dependencies/plugins with null version\n" +
         CHANGE_ARTIFACT + " group:artifact:ver:new-ver change version of all package occurences\n" +
         "   cannot be mixed with dependency filter (" + DEPENDENCY + "), can use module filtering (" + MODULE + ")\n" +
-        BACKUP_COPY + " make a backup copy of the changed pom.xml -> pom.xml.bak (only with " + CHANGE_ARTIFACT + ")\n" +
+        BACKUP_COPY + " make a backup copy of the changed pom.xml.equals(s)) pom.xml.bak (only with " + CHANGE_ARTIFACT + ")\n" +
         FULL_STACKTRACE + " print a full java exception stacktrace\n" +
         "paths... path list to search for pom.xml\n";
 
@@ -76,36 +76,24 @@ public class ArgParser {
                                 "expected 4 fields separated by ':', was= '" + s + "'");
                     }
                     changeArtifact = false;
+                } else if (REVERSE.equals(s)) {
+                    reverse = true;
+                } else if (NO_DEPENCENCIES.equals(s)) {
+                    noDependencies = true;
+                } else if (MODULE.equals(s)) {
+                    module = true;
+                } else if (DEPENDENCY.equals(s)) {
+                    dependency = true;
+                } else if (BACKUP_COPY.equals(s)) {
+                    makeBackupCopy = true;
+                } else if (CHANGE_ARTIFACT.equals(s)) {
+                    changeArtifact = true;
+                } else if (FULL_STACKTRACE.equals(s)) {
+                    fullStacktrace = true;
+                } else if (OMIT_NULL_VERSION.equals(s)) {
+                    omitNullVersion = true;
                 } else {
-                    switch (s) {
-                        case REVERSE -> {
-                            reverse = true;
-                        }
-                        case NO_DEPENCENCIES -> {
-                            noDependencies = true;
-                        }
-                        case MODULE -> {
-                            module = true;
-                        }
-                        case DEPENDENCY -> {
-                            dependency = true;
-                        }
-                        case BACKUP_COPY -> {
-                            makeBackupCopy = true;
-                        }
-                        case CHANGE_ARTIFACT -> {
-                            changeArtifact = true;
-                        }
-                        case FULL_STACKTRACE -> {
-                            fullStacktrace = true;
-                        }
-                        case OMIT_NULL_VERSION -> {
-                            omitNullVersion = true;
-                        }
-                        default -> {
-                            paths.add(s);
-                        }
-                    }
+                    paths.add(s);
                 }
             }
         }
@@ -176,6 +164,7 @@ public class ArgParser {
                 (dependencyRegexp != null ? "\ndependency regexp=" + dependencyRegexp : "") +
                 (omitNullVersion ? "\nomit null version=" + omitNullVersion : "") +
                 (artifactToChange != null ? "\nartifact to change=" + artifactToChange : "") +
+                (newVersion != null ? "\nnew version=" + newVersion : "") +
                 (makeBackupCopy ? "\nmake backup copy=" + makeBackupCopy : "") +
                 "\npaths=" + paths.toString();
     }

@@ -7,6 +7,7 @@ import java.util.Objects;
  * @author Francesco Illuminati <fillumina@gmail.com>
  */
 public class PackageId {
+    public static final String SEPARATOR = ":";
 
     private final String groupId;
     private final String artifactId;
@@ -14,7 +15,7 @@ public class PackageId {
     private final String str;
 
     public static PackageId parse(String str) {
-        String[] fields = str.split(":");
+        String[] fields = str.split(SEPARATOR);
         switch (fields.length) {
             case 2: return new PackageId(fields[0], fields[1], null);
             case 3: return new PackageId(fields[0], fields[1], fields[2]);
@@ -26,11 +27,11 @@ public class PackageId {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;
-        this.str = groupId + ":" + artifactId + (version == null ? "" : ":" + version);
+        this.str = groupId + SEPARATOR + artifactId + (version == null ? "" : SEPARATOR + version);
     }
 
     public String getName() {
-        return groupId + ":" + artifactId;
+        return groupId + SEPARATOR + artifactId;
     }
 
     public String getGroupId() {
