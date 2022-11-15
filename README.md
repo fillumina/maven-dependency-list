@@ -14,6 +14,10 @@ It is a `java` command line application embedded into a unix shell script (`run-
 
 - **1.0** 13/08/22 first version
 
+## Creating an executable script for *unix
+
+To create an executable script use the useful [gist](https://gist.github.com/briandealwis/782862/9cc9ef8a78af3bb78a692313f8bfa6fb76ab4663) which has been adapted and copied (with a reference added) to the project root. After compiling the code execute the script `run-script-creator.sh` to generate the final script `run-maven-dependency-list`.
+
 ## Scenario
 
 I like to build my projects around a lot of different reusable packages to increase reusability, testing and promoting single-responsibility principle ([SRP](https://en.wikipedia.org/wiki/Single-responsibility_principle)). 
@@ -223,7 +227,3 @@ Assuming `run-maven-dependency-list.sh` as the chosen script name.
    modified artifact in ./amzbridgems/pom.xml
    modified artifact in ./inventoryms/pom.xml
    ```
-
-## Creating an executable script for *unix
-
-To create an executable script use the useful [gist](https://gist.github.com/briandealwis/782862/9cc9ef8a78af3bb78a692313f8bfa6fb76ab4663) which has been adapted and copied (with a reference added) to the project root. After compiling the code execute the script `run-script-creator.sh` to generate the final script `run-maven-dependency-list`.
