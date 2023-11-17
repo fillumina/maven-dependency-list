@@ -161,7 +161,7 @@ public class ArgParser {
 
     @Override
     public String toString() {
-        return "arguments passed:" +
+        return "configuration:" +
                 (reverse ? "\nreverse=" + reverse : "") +
                 (noDependencies ? "\no dependencies=" + noDependencies : "") +
                 (moduleRegexp != null ? "\nmodule regexp=" + moduleRegexp : "") +

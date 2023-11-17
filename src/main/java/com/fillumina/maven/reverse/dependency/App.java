@@ -43,7 +43,7 @@ public class App {
             if (arguments.isReverse()) {
                 System.out.println("\nmodules using dependencies\n");
             } else {
-                System.out.println("\ndependencies use by module\n");
+                System.out.println("\ndependencies used by module\n");
             }
 
             for (String folderName : arguments.getFolderNames()) {

@@ -4,6 +4,11 @@ It **browses** trees of java `maven` projects (`pom.xml`) listing the dependenci
 
 It is a `java` command line application embedded into a unix shell script (`run-maven-dependency-list.sh`) and needs a compatible [JRE 8](https://www.java.com/en/download/manual.jsp) available in the system. If you don't have access to a unix shell (`bash`) you can call it directly with: `java -jar maven-dependency-list-1.2.jar`  where the `jar` file is created in the `target` folder after compilation (`mvn clean install`).
 
+## TODO
+
+- substitute ${project.groupId} and ${project.version} with proper values
+- generates dependency tree (based on analyzed files only)
+
 ## Versions
 
 - **1.2.1** 15/11/22 indexOf algorithm fix (corner case)
@@ -49,7 +54,7 @@ It accepts the following parameters:
 
 - `-j` pring a full java exception stacktrace on error
 
-- It accepts any number of directories that will be traversed searching for sub-projects. If a sub-directory doesn't contain a `pom.xml` no further traversing is performed.
+- It accepts any number of directories that will be traversed searching for sub-projects.
 
 ## Examples
 
