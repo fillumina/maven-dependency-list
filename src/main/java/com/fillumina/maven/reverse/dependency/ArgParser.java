@@ -39,7 +39,7 @@ public class ArgParser {
         OMIT_NULL_VERSION + " omit dependencies/plugins with null version\n" +
         CHANGE_ARTIFACT + " group:artifact:ver:new-ver change version of all package occurences\n" +
         "   cannot be mixed with dependency filter (" + DEPENDENCY + "), can use module filtering (" + MODULE + ")\n" +
-        BACKUP_COPY + " make a backup copy of the changed pom.xml.equals(s)) pom.xml.bak (only with " + CHANGE_ARTIFACT + ")\n" +
+        BACKUP_COPY + " make a backup copy of the changed pom.xml as pom.xml.bak (only with " + CHANGE_ARTIFACT + ")\n" +
         FULL_STACKTRACE + " print a full java exception stacktrace\n" +
         "paths... path list to search for pom.xml\n";
 
