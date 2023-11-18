@@ -4,12 +4,13 @@ It **browses** trees of java `maven` projects (`pom.xml`) listing the dependenci
 
 It is a `java` command line application embedded into a unix shell script (`run-maven-dependency-list.sh`) and needs a compatible [JRE 8](https://www.java.com/en/download/manual.jsp) available in the system. If you don't have access to a unix shell (`bash`) you can call it directly with: `java -jar maven-dependency-list-1.2.jar`  where the `jar` file is created in the `target` folder after compilation (`mvn clean install`).
 
-## TODO
+## Tree visualization
 
-- substitute ${project.groupId} and ${project.version} with proper values
-- generates dependency tree (based on analyzed files only)
+This application is geared towards directory of java projects with useful features such as reverse searching (dependent object for each dependency), to analyze a single project use the [Maven Dependency Tree Plugin](https://maven.apache.org/plugins/maven-dependency-plugin/tree-mojo.html).
 
 ## Versions
+
+- **1.2.2** fix implicit or inherited groupId and version
 
 - **1.2.1** 15/11/22 indexOf algorithm fix (corner case)
 
@@ -25,9 +26,9 @@ To create an executable script use the useful [gist](https://gist.github.com/bri
 
 ## Scenario
 
-I like to build my projects around a lot of different reusable packages to increase reusability, testing and promoting single-responsibility principle ([SRP](https://en.wikipedia.org/wiki/Single-responsibility_principle)). 
+I like to build my projects around a lot of different reusable packages to increase reusability, testing and promoting single-responsibility principle ([SRP](https://en.wikipedia.org/wiki/Single-responsibility_principle)).
 
-This takes as a drawback a difficulty in managing versions: if a package is used in many different projects it is difficult to track what version each project is using (especially if they are a lot!). Moreover I want my build to be replicable so package version should stay consistent with the code (never change a code once the version has been published). 
+This takes as a drawback a difficulty in managing versions: if a package is used in many different projects it is difficult to track what version each project is using (especially if they are a lot!). Moreover I want my build to be replicable so package version should stay consistent with the code (never change a code once the version has been published).
 
 This little utility has been created to help manage that: it searches dependencies along many different projects and is able to change the version of a dependency in bulk (i.e. when removing or adding [SNAPSHOT](https://maven.apache.org/guides/getting-started/index.html#what-is-a-snapshot-version) before or after releasing a project version).
 
@@ -64,7 +65,7 @@ Assuming `run-maven-dependency-list.sh` as the chosen script name.
    
    ```
    run-maven-dependency-list.sh /home/fra/Devel/Code -d
-    SNAPSHOT 
+    SNAPSHOT
    ```
    
    ```
@@ -77,7 +78,7 @@ Assuming `run-maven-dependency-list.sh` as the chosen script name.
    searching in: /home/fra/Devel/Code
    
    com.fillumina:performance-tools-multi:2.0-SNAPSHOT
-           ${project.groupId}:performance-tools:2.0-SNAPSHOT
+           com.fillumina:performance-tools:2.0-SNAPSHOT
    
    com.mycompany:xmi-to-jdl:1.0-SNAPSHOT
            com.fillumina:xmi-to-jdl:1.0-SNAPSHOT
@@ -86,7 +87,7 @@ Assuming `run-maven-dependency-list.sh` as the chosen script name.
            com.fillumina:dataimport:1.0-SNAPSHOT
    
    com.fillumina:lcs-algorithms:1.0-SNAPSHOT
-           ${project.groupId}:performance-tools:1.2-SNAPSHOT
+           com.fillumina:performance-tools:1.2-SNAPSHOT
    
    com.fillumina:java-utils-main:1.0-SNAPSHOT
            com.fillumina:performance-tools:0.1-SNAPSHOT
@@ -102,16 +103,16 @@ Assuming `run-maven-dependency-list.sh` as the chosen script name.
            com.fillumina:bean-tools:1.0-SNAPSHOT
    
    com.fillumina:whatsapp-intelli-cleaner:1.0-SNAPSHOT
-           ${project.groupId}:performance-tools:2.0-SNAPSHOT
+           com.fillumina:performance-tools:2.0-SNAPSHOT
    
    com.fillumina:lcs-test-util:1.0-SNAPSHOT
-           ${project.groupId}:performance-tools:1.2-SNAPSHOT
+           com.fillumina:performance-tools:1.2-SNAPSHOT
    ```
 
 2. Get projects depending on `jupiter` (all versions):
    
    ```
-   run-maven-dependency-list.sh /home/fra/Devel/Code -d jupiter -r 
+   run-maven-dependency-list.sh /home/fra/Devel/Code -d jupiter -r
    ```
    
    ```
@@ -150,13 +151,13 @@ Assuming `run-maven-dependency-list.sh` as the chosen script name.
            com.fillumina:formio-gen:1.0-SNAPSHOT
    
    org.junit.jupiter:junit-jupiter-engine:5.4.2
-           com.fillumina:whatsapp-intelli-cleaner:1.0-SNAPSHOT            
+           com.fillumina:whatsapp-intelli-cleaner:1.0-SNAPSHOT
    ```
 
 3. Get projects depending on `jupiter` version 5.6.0:
    
    ```
-   run-maven-dependency-list.sh /home/fra/Devel/Code -d jupiter\.*5\\.6\\.0 -r 
+   run-maven-dependency-list.sh /home/fra/Devel/Code -d jupiter\.*5\\.6\\.0 -r
    ```
    
    ```

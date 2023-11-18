@@ -9,8 +9,8 @@ import java.util.regex.Pattern;
  * @author Francesco Illuminati <fillumina@gmail.com>
  */
 public class ArgParser {
-    private static final String VERSION = "1.2.1";
-    private static final String VERSION_DATA = "15/11/22";
+    private static final String VERSION = "1.2.2";
+    private static final String VERSION_DATA = "17/11/23";
 
     private static final String HELP_LONG = "--help";
     private static final String HELP_SHORT = "-h";

@@ -46,7 +46,8 @@ public class Pom {
             doc.getDocumentElement().normalize();
 
             propertyMap = parseProperties(doc);
-            pomPackage = extractProject(doc.getDocumentElement(), propertyMap, "");
+
+            pomPackage = parsePomPackage(doc);
 
             if (noDependencies) {
                 associationBuilder.add(pomPackage, null);
@@ -59,6 +60,28 @@ public class Pom {
             throw new RuntimeException(e);
         }
 
+    }
+
+    private PackageId parsePomPackage(Document doc) throws DOMException {
+        PackageId pom = extractProject(doc.getDocumentElement(), propertyMap, "");
+        NodeList nodes = doc.getDocumentElement().getElementsByTagName("parent");
+        if (nodes.getLength() == 1) {
+            Element parentElement = (Element) nodes.item(0);
+            if (parentElement != null) {
+                PackageId parent = extractProject(parentElement, propertyMap, "parent");
+                if (parent != null) {
+                    if ( (pom.getGroupId() == null && parent.getGroupId() != null) ||
+                            (pom.getVersion() == null && parent.getVersion() != null)) {
+                        pom = new PackageId(
+                                notNull(pom.getGroupId(), parent.getGroupId()),
+                                pom.getArtifactId(),
+                                notNull(pom.getVersion(), parent.getVersion())
+                        );
+                    }
+                }
+            }
+        }
+        return pom;
     }
 
     public PackageId getPomPackage() {
@@ -117,6 +140,14 @@ public class Pom {
             final String property = version.substring(2, version.length() - 1);
             version = versionMap.get(property);
         }
+        if (pomPackage != null) {
+            if (groupId == null || groupId.trim().equals("${project.groupId}")) {
+                groupId = pomPackage.getGroupId();
+            }
+            if (version == null || version.trim().equals("${project.version}")) {
+                version = pomPackage.getVersion();
+            }
+        }
         // default groupId is 'org.apache.maven.pugins' if omitted
         // https://stackoverflow.com/questions/65527291/is-groupid-required-for-plugins-in-maven-pom-xml
         final String adjustedGroupId = groupId == null && isPlugin ? "org.apache.maven.pugins" : groupId;
@@ -144,4 +175,7 @@ public class Pom {
         return null;
     }
 
+    private static String notNull(String a, String b) {
+        return a == null ? b : a;
+    }
 }
