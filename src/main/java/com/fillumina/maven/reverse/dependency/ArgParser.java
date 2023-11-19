@@ -18,7 +18,7 @@ public class ArgParser {
     private static final String CHANGE_ARTIFACT = "-c";
     private static final String BACKUP_COPY = "-b";
     private static final String DEPENDENCY = "-d";
-    private static final String MODULE = "-m";
+    private static final String PROJECT = "-p";
     private static final String NO_DEPENCENCIES = "-n";
     private static final String REVERSE = "-r";
     private static final String OMIT_NULL_VERSION = "-v";
@@ -27,18 +27,18 @@ public class ArgParser {
         "by Francesco Illuminati fillumina@gmail.com - https://github.com/fillumina/maven-dependency-list " +
             "- ver " + VERSION + " " + VERSION_DATA +"\n" +
         "List and change package versions in a directory tree of maven pom.xml with filters.\n" +
-        "options: [" + HELP_SHORT + "|" + HELP_LONG + "] [" + REVERSE + "] [" + NO_DEPENCENCIES +"] [" + MODULE + " module_regexp] " +
+        "options: [" + HELP_SHORT + "|" + HELP_LONG + "] [" + REVERSE + "] [" + NO_DEPENCENCIES +"] [" + PROJECT + " project_regexp] " +
             "[" + DEPENDENCY + " dependecy_regexp] [" + CHANGE_ARTIFACT + " group:artifact:ver:new-ver] " +
             "[" + BACKUP_COPY + "] paths...\n" +
         "where:\n" +
         HELP_SHORT + " or " + HELP_LONG + " print this help\n" +
-        REVERSE + " reverse module and dependencies\n" +
+        REVERSE + " print dependent projects by dependencies\n" +
         NO_DEPENCENCIES + " print only project names without dependencies\n" +
-        MODULE + " regexp set a module filter\n" +
+        PROJECT + " regexp set a project filter\n" +
         DEPENDENCY + " regexp set a dependency/plugin filter\n" +
         OMIT_NULL_VERSION + " omit dependencies/plugins with null version\n" +
         CHANGE_ARTIFACT + " group:artifact:ver:new-ver change version of all package occurences\n" +
-        "   cannot be mixed with dependency filter (" + DEPENDENCY + "), can use module filtering (" + MODULE + ")\n" +
+        "   cannot be mixed with dependency filter (" + DEPENDENCY + "), can use project filtering (" + PROJECT + ")\n" +
         BACKUP_COPY + " make a backup copy of the changed pom.xml as pom.xml.bak (only with " + CHANGE_ARTIFACT + ")\n" +
         FULL_STACKTRACE + " print a full java exception stacktrace\n" +
         "paths... path list to search for pom.xml\n";
@@ -47,7 +47,7 @@ public class ArgParser {
     private boolean error;
     private boolean reverse;
     private boolean noDependencies;
-    private Pattern moduleRegexp;
+    private Pattern projectRegexp;
     private Pattern dependencyRegexp;
     private List<String> paths = new ArrayList<>();
     private PackageId artifactToChange;
@@ -57,16 +57,16 @@ public class ArgParser {
     private boolean omitNullVersion;
 
     public ArgParser(String[] args) {
-        boolean module = false, dependency = false, changeArtifact = false;
+        boolean project = false, dependency = false, changeArtifact = false;
         if (args == null || args.length == 0) {
             error = true;
         } else {
             for (String s : args) {
                 if (HELP_SHORT.equals(s) || HELP_LONG.equals(s)) {
                     help = true;
-                } else if (module) {
-                    moduleRegexp = Pattern.compile("^.*" + s + ".*$");
-                    module = false;
+                } else if (project) {
+                    projectRegexp = Pattern.compile("^.*" + s + ".*$");
+                    project = false;
                 } else if (dependency) {
                     dependencyRegexp = Pattern.compile("^.*" + s + ".*$");
                     dependency = false;
@@ -84,8 +84,8 @@ public class ArgParser {
                     reverse = true;
                 } else if (NO_DEPENCENCIES.equals(s)) {
                     noDependencies = true;
-                } else if (MODULE.equals(s)) {
-                    module = true;
+                } else if (PROJECT.equals(s)) {
+                    project = true;
                 } else if (DEPENDENCY.equals(s)) {
                     dependency = true;
                 } else if (BACKUP_COPY.equals(s)) {
@@ -116,7 +116,7 @@ public class ArgParser {
     }
 
     public Pattern getModuleRegexp() {
-        return moduleRegexp;
+        return projectRegexp;
     }
 
     public Pattern getDependencyRegexp() {
@@ -164,7 +164,7 @@ public class ArgParser {
         return "configuration:" +
                 (reverse ? "\nreverse=" + reverse : "") +
                 (noDependencies ? "\no dependencies=" + noDependencies : "") +
-                (moduleRegexp != null ? "\nmodule regexp=" + moduleRegexp : "") +
+                (projectRegexp != null ? "\nproject regexp=" + projectRegexp : "") +
                 (dependencyRegexp != null ? "\ndependency regexp=" + dependencyRegexp : "") +
                 (omitNullVersion ? "\nomit null version=" + omitNullVersion : "") +
                 (artifactToChange != null ? "\nartifact to change=" + artifactToChange : "") +

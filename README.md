@@ -1,8 +1,16 @@
 # maven-dependency-list
 
-It **browses** trees of java `maven` projects (`pom.xml`) listing the dependencies for each project with various filters and **changes** all occurrences (eventually filtered by module) of the version of a specified dependency or plugin.
+It **browses** trees of java `maven` projects (`pom.xml`) listing the dependencies for each project with various filters and eventually **changes** (filtered by project) the version of a specified dependency or plugin.
 
-It is a `java` command line application embedded into a unix shell script (`run-maven-dependency-list.sh`) and needs a compatible [JRE 8](https://www.java.com/en/download/manual.jsp) available in the system. If you don't have access to a unix shell (`bash`) you can call it directly with: `java -jar maven-dependency-list-1.2.jar`  where the `jar` file is created in the `target` folder after compilation (`mvn clean install`).
+Java projects usually depends on a lot of reusable packages which increases reusability, testing and promotes single-responsibility principle ([SRP](https://en.wikipedia.org/wiki/Single-responsibility_principle)).
+
+On the back side if a package is used in many different projects it rapidly becomes difficult to track what version each project is using (especially if they are a lot!).
+
+This utility has been created to show who depends on what in trees of projects. It can view dependencies or dependent packages and change the version of a dependency in bulk (i.e. when removing or adding [SNAPSHOT](https://maven.apache.org/guides/getting-started/index.html#what-is-a-snapshot-version) before or after releasing a project version).
+
+## Build
+
+Use  `run-script-creator.sh` to create a `java` command line application embedded into a shell script (`run-maven-dependency-list.sh`). It needs a compatible [JRE 8](https://www.java.com/en/download/manual.jsp) available in the system. If you don't have access to `bash` shell you can call it directly with: `java -jar maven-dependency-list-1.2.jar`  where the `jar` file is created in the `target` folder after compilation (`mvn clean install`).
 
 ## Tree visualization
 
@@ -10,9 +18,9 @@ This application is geared towards directory of java projects with useful featur
 
 ## Versions
 
-- **1.2.2** fix implicit or inherited groupId and version
+- **1.2.2** 19/11/23 fix implicit or inherited `groupId` and `version`
 
-- **1.2.1** 15/11/22 indexOf algorithm fix (corner case)
+- **1.2.1** 15/11/22 algorithm fix (corner case)
 
 - **1.2** 15/11/22 adds the possibility to change the version of a dependency/plugin
 
@@ -24,58 +32,47 @@ This application is geared towards directory of java projects with useful featur
 
 To create an executable script use the useful [gist](https://gist.github.com/briandealwis/782862/9cc9ef8a78af3bb78a692313f8bfa6fb76ab4663) which has been adapted and copied (with a reference added) to the project root. After compiling the code execute the script `run-script-creator.sh` to generate the final script `run-maven-dependency-list`.
 
-## Scenario
-
-I like to build my projects around a lot of different reusable packages to increase reusability, testing and promoting single-responsibility principle ([SRP](https://en.wikipedia.org/wiki/Single-responsibility_principle)).
-
-This takes as a drawback a difficulty in managing versions: if a package is used in many different projects it is difficult to track what version each project is using (especially if they are a lot!). Moreover I want my build to be replicable so package version should stay consistent with the code (never change a code once the version has been published).
-
-This little utility has been created to help manage that: it searches dependencies along many different projects and is able to change the version of a dependency in bulk (i.e. when removing or adding [SNAPSHOT](https://maven.apache.org/guides/getting-started/index.html#what-is-a-snapshot-version) before or after releasing a project version).
-
-## Options
+## ## Options
 
 It accepts the following parameters:
 
 - `-h` or `--help` print an help message
 
-- `-r` lists owning module for each dependency instead of the dependencies for each module.
+- `-r` lists dependencies by dependent projects
 
-- `-n` lists only modules without dependencies
+- `-n` lists only main projects found in the given directories
 
-- `-m module-regexp` specifies a regexp filter for mudule names ($ and ^ will be added)
+- `-p project-regexp` specifies a regexp filter for main project names ($ and ^ will be added)
 
 - `-d dependency-regexp` specifies a regexp filter for dependency names ($ and ^ will be added)
 
-- `-v` omit dependencies or plugins with no version specified
-
-- `-c group:artifact:ver:new-ver` change version of all package occurences  found within the tree hierarchy honoring the module filtering (`-m`).
+- `-c group:artifact:ver:new-ver` change version of all package occurrences  found within the tree hierarchy honoring the project filtering (`-p`).
   It doesn't support dependency filter (`-d`).
 
 - `-b` make a backup copy of the changed `pom.xml` -> `pom.xml.bak` (only with `-c`)
 
-- `-j` pring a full java exception stacktrace on error
+- `-j` print a full java exception stacktrace on error (for debugging)
 
-- It accepts any number of directories that will be traversed searching for sub-projects.
+- It accepts any number of directories that will be traversed searching for sub-projects (a directory containing a `pom.xml` file).
 
 ## Examples
 
 Assuming `run-maven-dependency-list.sh` as the chosen script name.
 
-1. Get all projects with `SNAPSHOT` dependencies:
+1. Get all projects depending on packages witha a  `SNAPSHOT` version:
    
    ```
-   run-maven-dependency-list.sh /home/fra/Devel/Code -d
-    SNAPSHOT
+   run-maven-dependency-list.sh . -d SNAPSHOT
    ```
    
    ```
    arguments passed:
    dependency regexp=^.*SNAPSHOT.*$
-   paths=[/home/fra/Devel/Code]
+   paths=[.]
    
-   dependencies use by module
+   dependencies use by project
    
-   searching in: /home/fra/Devel/Code
+   searching in: .
    
    com.fillumina:performance-tools-multi:2.0-SNAPSHOT
            com.fillumina:performance-tools:2.0-SNAPSHOT
@@ -112,20 +109,18 @@ Assuming `run-maven-dependency-list.sh` as the chosen script name.
 2. Get projects depending on `jupiter` (all versions):
    
    ```
-   run-maven-dependency-list.sh /home/fra/Devel/Code -d jupiter -r
+   run-maven-dependency-list.sh . -d jupiter -r
    ```
    
    ```
    arguments passed:
    reverse=true
    dependency regexp=^.*jupiter.*$
-   paths=[/home/fra/Devel/Code]
+   paths=[.]
    
-   modules using dependencies
+   projects using dependencies
    
-   searching in: /home/fra/Devel/Code
-   
-   org.junit.jupiter:junit-jupiter-engine
+   searching in: /home/fra/Devel/Cod.:junit-jupiter-engine
            com.fillumina.emporia:emporia:0.0.1-SNAPSHOT
    
    org.junit.jupiter:junit-jupiter-params:5.6.0
@@ -157,21 +152,19 @@ Assuming `run-maven-dependency-list.sh` as the chosen script name.
 3. Get projects depending on `jupiter` version 5.6.0:
    
    ```
-   run-maven-dependency-list.sh /home/fra/Devel/Code -d jupiter\.*5\\.6\\.0 -r
+   run-maven-dependency-list.sh . -d jupiter\.*5\\.6\\.0 -r
    ```
    
    ```
    arguments passed:
    reverse=true
-   module regexp=^.*fillumina.*$
+   project regexp=^.*fillumina.*$
    dependency regexp=^.*jupiter.*5\.6\.0.*$
-   paths=[/home/fra/Devel/Code]
+   paths=[.]
    
-   modules using dependencies
+   projects using dependencies
    
-   searching in: /home/fra/Devel/Code
-   
-   org.junit.jupiter:junit-jupiter-params:5.6.0
+   searching in: /home/fra/Devel/Cod.:junit-jupiter-params:5.6.0
            com.fillumina:collections:1.0.1-SNAPSHOT
            com.fillumina:formio-gen:1.0-SNAPSHOT
    
@@ -184,24 +177,22 @@ Assuming `run-maven-dependency-list.sh` as the chosen script name.
            com.fillumina:formio-gen:1.0-SNAPSHOT
    ```
 
-4. Get projects from modules containing `fillumina` depending on `jupiter`  5.6.0:
+4. Get projects from projects containing `fillumina` depending on `jupiter`  5.6.0:
    
    ```
-   run-maven-dependency-list.sh /home/fra/Devel/Code -d jupiter\.*5\\.6\\.0 -r -m fillumina
+   run-maven-dependency-list.sh . -d jupiter\.*5\\.6\\.0 -r -p fillumina
    ```
    
    ```
    arguments passed:
    reverse=true
-   module regexp=^.*fillumina.*$
+   project regexp=^.*fillumina.*$
    dependency regexp=^.*jupiter.*5\.6\.0.*$
-   paths=[/home/fra/Devel/Code]
+   paths=[.]
    
-   modules using dependencies
+   projects using dependencies
    
-   searching in: /home/fra/Devel/Code
-   
-   org.junit.jupiter:junit-jupiter-params:5.6.0
+   searching in: /home/fra/Devel/Cod.:junit-jupiter-params:5.6.0
            com.fillumina:collections:1.0.1-SNAPSHOT
            com.fillumina:formio-gen:1.0-SNAPSHOT
    
@@ -217,16 +208,16 @@ Assuming `run-maven-dependency-list.sh` as the chosen script name.
 5. Change the version of the specified dependency from 2.0.1 to 3.0.0 in all projects having `fillumina` as part of the artifact-id or group-id:
    
    ```
-   run-maven-dependency-list.sh -m fillumina -c javax.validation:validation-api:2.0.1.Final:3.0.0 .
+   run-maven-dependency-list.sh -p fillumina -c javax.validation:validation-api:2.0.1.Final:3.0.0 .
    ```
    
    ```
-   module regexp=^.*fillumina.*$
+   project regexp=^.*fillumina.*$
    artifact to change=javax.validation:validation-api:2.0.1.Final
    new version=3.0.0
    paths=[.]
    
-   dependencies use by module
+   dependencies use by project
    
    searching in: .
    
