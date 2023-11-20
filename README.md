@@ -26,9 +26,7 @@ This application is geared towards directory of java projects with useful featur
 
 - **1.0** 13/08/22 first version
 
-
-
-## ## Options
+## Options
 
 It accepts the following parameters:
 
