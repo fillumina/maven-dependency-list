@@ -1,20 +1,18 @@
 # maven-dependency-list
 
-It **browses** trees of java `maven` projects (`pom.xml`) listing the dependencies for each project with various filters and eventually **changes** (filtered by project) the version of a specified dependency or plugin.
-
-Java projects usually depends on a lot of reusable packages which increases reusability, testing and promotes single-responsibility principle ([SRP](https://en.wikipedia.org/wiki/Single-responsibility_principle)).
-
-On the back side if a package is used in many different projects it rapidly becomes difficult to track what version each project is using (especially if they are a lot!).
-
-This utility has been created to show who depends on what in trees of projects. It can view dependencies or dependent packages and change the version of a dependency in bulk (i.e. when removing or adding [SNAPSHOT](https://maven.apache.org/guides/getting-started/index.html#what-is-a-snapshot-version) before or after releasing a project version).
+**Scans** trees of java `maven` projects listing the dependencies of each project found. It allows **selections** by using REGEXP filtering and can **change** the version of a dependency or plugin in all projects at once. It also allows reverse viewing which list each project depending on a specific dependency.
 
 ## Build
 
-Use  `run-script-creator.sh` to create a `java` command line application embedded into a shell script (`run-maven-dependency-list.sh`). It needs a compatible [JRE 8](https://www.java.com/en/download/manual.jsp) available in the system. If you don't have access to `bash` shell you can call it directly with: `java -jar maven-dependency-list-1.2.jar`  where the `jar` file is created in the `target` folder after compilation (`mvn clean install`).
+The Java project can be built with the usual `mvn clean install` given the presence in the path of both a JDK 1.8+ and maven.
 
-## Tree visualization
+Use the script  `run-script-creator.sh` (derived from this [gist](https://gist.github.com/briandealwis/782862/9cc9ef8a78af3bb78a692313f8bfa6fb76ab4663)) to create a `java` command line application embedded into a shell script (`run-maven-dependency-list.sh`). It needs a compatible [JRE 8](https://www.java.com/en/download/manual.jsp) available in the system.
 
-This application is geared towards directory of java projects with useful features such as reverse searching (dependent object for each dependency), to analyze a single project use the [Maven Dependency Tree Plugin](https://maven.apache.org/plugins/maven-dependency-plugin/tree-mojo.html).
+If you don't have access to a `bash` shell you can use the application by calling it directly with: `java -jar maven-dependency-list-1.2.jar`  where the `jar` file is created in the `target` folder after compilation (`mvn clean install`).
+
+## Tree Visualization
+
+This application is geared towards directory of java projects with useful features such as reverse searching (showing dependent projects for each dependency). To analyze a single project and view the full dependency tree use [Maven Dependency Tree Plugin](https://maven.apache.org/plugins/maven-dependency-plugin/tree-mojo.html).
 
 ## Versions
 
@@ -28,9 +26,7 @@ This application is geared towards directory of java projects with useful featur
 
 - **1.0** 13/08/22 first version
 
-## Creating an executable script for *unix
 
-To create an executable script use the useful [gist](https://gist.github.com/briandealwis/782862/9cc9ef8a78af3bb78a692313f8bfa6fb76ab4663) which has been adapted and copied (with a reference added) to the project root. After compiling the code execute the script `run-script-creator.sh` to generate the final script `run-maven-dependency-list`.
 
 ## ## Options
 
