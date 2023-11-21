@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Parses XML elements in a hierarchy.
@@ -100,7 +101,7 @@ public class XmlParser {
         addChildren(list, buf);
         tree = list.stream()
                 .filter(t -> t.isRoot() && !t.isClosing())
-                .toList();
+                .collect(Collectors.toList());
     }
 
     public List<XmlTag> getTree() {
