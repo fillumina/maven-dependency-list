@@ -16,6 +16,8 @@ This application is geared towards directory of java projects with useful featur
 
 ## Versions
 
+- **1.2.3** 21/11/23 fix implicit `org.apache.maven.plugins` as `groupId`  for plugins
+
 - **1.2.2** 19/11/23 fix implicit or inherited `groupId` and `version`
 
 - **1.2.1** 15/11/22 algorithm fix (corner case)
