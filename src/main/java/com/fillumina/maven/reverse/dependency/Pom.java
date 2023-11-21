@@ -141,8 +141,12 @@ public class Pom {
             version = versionMap.get(property);
         }
         if (pomPackage != null) {
-            if (groupId == null || groupId.trim().equals("${project.groupId}")) {
-                groupId = pomPackage.getGroupId();
+            if (groupId == null) {
+                if (groupId.trim().equals("${project.groupId}")) {
+                    groupId = pomPackage.getGroupId();
+                } else if (isPlugin) {
+                    groupId = "org.apache.maven.plugins";
+                }
             }
             if (version == null || version.trim().equals("${project.version}")) {
                 version = pomPackage.getVersion();
