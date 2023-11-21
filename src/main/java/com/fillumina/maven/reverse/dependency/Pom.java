@@ -142,11 +142,13 @@ public class Pom {
         }
         if (pomPackage != null) {
             if (groupId == null) {
-                if (groupId.trim().equals("${project.groupId}")) {
-                    groupId = pomPackage.getGroupId();
-                } else if (isPlugin) {
+                if (isPlugin) {
                     groupId = "org.apache.maven.plugins";
+                } else {
+                    groupId = pomPackage.getGroupId();
                 }
+            } else if (groupId.trim().equals("${project.groupId}")) {
+                groupId = pomPackage.getGroupId();
             }
             if (version == null || version.trim().equals("${project.version}")) {
                 version = pomPackage.getVersion();
