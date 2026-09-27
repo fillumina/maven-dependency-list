@@ -14,6 +14,29 @@ import org.junit.jupiter.api.Test;
 public class ArgParserTest {
 
     @Test
+    public void shouldExplainEveryOptionItAccepts() {
+        for (String option : new String[]{"-h", "--help", "-r", "-n", "-o", "-p", "-d", "-v", "-c", "-b", "-j"}) {
+            assertTrue(usage().contains(option), option + " is not explained in the help");
+        }
+        assertTrue(usage().contains("group:artifact:ver:new"), usage());
+        assertTrue(usage().contains("group:artifact:ver"), usage());
+    }
+
+    @Test
+    public void shouldSayWhatCannotBeCombined() {
+        assertTrue(usage().contains("cannot be used with -d or -o"), usage());
+    }
+
+    private static String usage() {
+        return ArgParser.getUsage();
+    }
+
+    @Test
+    public void shouldCarryTheVersionItWasBuiltAs() {
+        assertTrue(usage().matches("(?s)^maven-dependency-list \\d+\\.\\d+\\.\\d+ .*"), usage());
+    }
+
+    @Test
     public void shouldReportAnErrorWhenNoArgumentIsGiven() {
         ArgParser arguments = new ArgParser(new String[0]);
 

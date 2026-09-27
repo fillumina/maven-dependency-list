@@ -24,27 +24,57 @@ public class ArgParser {
     private static final String OMIT_NULL_VERSION = "-v";
     private static final String OUTDATED = "-o";
 
-    private static final String USAGE =
-        "by Francesco Illuminati fillumina@gmail.com - https://github.com/fillumina/maven-dependency-list " +
-            "- ver " + VERSION + " " + VERSION_DATA +"\n" +
-        "List and change package versions in a directory tree of maven pom.xml with filters.\n" +
-        "options: [" + HELP_SHORT + "|" + HELP_LONG + "] [" + REVERSE + "] [" + NO_DEPENCENCIES +"] [" + PROJECT + " project_regexp] " +
-            "[" + DEPENDENCY + " dependecy_regexp] [" + CHANGE_ARTIFACT + " group:artifact:ver:new-ver] [" + OUTDATED + " group:artifact:ver] " +
-            "[" + BACKUP_COPY + "] paths...\n" +
-        "where:\n" +
-        HELP_SHORT + " or " + HELP_LONG + " print this help\n" +
-        REVERSE + " print dependent projects by dependencies\n" +
-        NO_DEPENCENCIES + " print only project names without dependencies\n" +
-        PROJECT + " regexp set a project filter\n" +
-        DEPENDENCY + " regexp set a dependency/plugin filter\n" +
-        OMIT_NULL_VERSION + " omit dependencies/plugins with null version\n" +
-        CHANGE_ARTIFACT + " group:artifact:ver:new-ver change version of all package occurences\n" +
-        OUTDATED + " group:artifact:ver keep only the projects still on an older version of that\n" +
-        "   artifact, and cannot be mixed with " + CHANGE_ARTIFACT + "\n" +
-        "   cannot be mixed with dependency filter (" + DEPENDENCY + "), can use project filtering (" + PROJECT + ")\n" +
-        BACKUP_COPY + " make a backup copy of the changed pom.xml as pom.xml.bak (only with " + CHANGE_ARTIFACT + ")\n" +
-        FULL_STACKTRACE + " print a full java exception stacktrace\n" +
-        "paths... path list to search for pom.xml\n";
+    private static final String[] USAGE = {
+        "maven-dependency-list " + VERSION + " (" + VERSION_DATA + ")",
+        "Francesco Illuminati fillumina@gmail.com - https://github.com/fillumina/maven-dependency-list",
+        "",
+        "Lists the versions the projects in a tree of folders are on, and changes them.",
+        "",
+        "usage: maven-dependency-list [options] <folder> [<folder>...]",
+        "",
+        "  Each folder is searched for pom.xml. The folder you name is always entered,",
+        "  and so is every folder that has a pom.xml of its own. A folder that only",
+        "  groups projects is not entered, so pass those folders as well.",
+        "",
+        "what it shows",
+        "  " + REVERSE + "  list by dependency instead of by project: each dependency",
+        "        on top, the projects using it indented under it",
+        "  " + NO_DEPENCENCIES + "  list the projects only, without what they depend on",
+        "  " + OUTDATED + " group:artifact:ver",
+        "        keep only the dependencies of that artifact that are on an OLDER",
+        "        version than the one given, which is how a tree is asked which",
+        "        projects are behind. A version that could not be resolved is kept,",
+        "        because nothing can say it is not behind. Cannot be used with " + CHANGE_ARTIFACT,
+        "",
+        "what it looks at",
+        "  " + PROJECT + " regexp   only the projects whose group:artifact:version matches",
+        "  " + DEPENDENCY + " regexp   only the dependencies and plugins that match",
+        "        both are matched as a substring: what you give is wrapped in ^.* and",
+        "        .*$, so an anchor of your own will not match anything",
+        "  " + OMIT_NULL_VERSION + "  leave out the dependencies and plugins with no version",
+        "",
+        "what it changes",
+        "  " + CHANGE_ARTIFACT + " group:artifact:ver:new",
+        "        set every occurrence of that artifact at that version to the new one",
+        "        a version written as a property is changed where it is declared when",
+        "        that is this pom, and pinned in place when the property comes from a",
+        "        parent, so one project moves and its siblings do not",
+        "        cannot be used with " + DEPENDENCY + " or " + OUTDATED + "; " + PROJECT + " still applies",
+        "  " + BACKUP_COPY + "  with " + CHANGE_ARTIFACT + ", move each changed pom.xml to",
+        "        pom.xml.bak before writing the new one, replacing an older .bak",
+        "",
+        "what else",
+        "  " + HELP_SHORT + ", " + HELP_LONG + "  print this",
+        "  " + FULL_STACKTRACE + "  print the whole java stacktrace on error. It covers the poms,",
+        "        not a mistyped argument, which is always reported in one line",
+        "",
+        "what comes out",
+        "  Plain text on stdout, one group:artifact:version per line, the dependencies",
+        "  of a project indented under it. A version that could not be resolved, a",
+        "  pom.xml that could not be read, and a pom.xml that declares the artifact " + CHANGE_ARTIFACT,
+        "  was pointed at but did not change, all say so on stderr.",
+        "  Exit code 0 when it ran, 1 when it did not.",
+    };
 
     private boolean help;
     private boolean error;
@@ -126,7 +156,7 @@ public class ArgParser {
     }
 
     public static String getUsage() {
-        return USAGE;
+        return String.join(System.lineSeparator(), USAGE);
     }
 
     public boolean isReverse() {
