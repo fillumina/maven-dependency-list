@@ -26,14 +26,26 @@ public class AssociationBuilder {
     }
 
     public void add(PackageId source, PackageId dependency) {
-        if ((!(isOmitNullVersion && dependency.getVersion() == null)) &&
-                (modPattern == null || modPattern.matcher(source.toString()).matches()) &&
-                (dependency == null || depPattern == null || depPattern.matcher(dependency.toString()).matches()) ) {
-            if (reverse) {
-                innerAdd(dependency, source);
-            } else {
-                innerAdd(source, dependency);
+        if (dependency != null && isOmitNullVersion && dependency.getVersion() == null) {
+            return;
+        }
+        if (modPattern != null && !modPattern.matcher(source.toString()).matches()) {
+            return;
+        }
+        if (dependency == null) {
+            // in reverse mode the dependency is the key, a project without one has nothing to list
+            if (!reverse) {
+                innerAdd(source, null);
             }
+            return;
+        }
+        if (depPattern != null && !depPattern.matcher(dependency.toString()).matches()) {
+            return;
+        }
+        if (reverse) {
+            innerAdd(dependency, source);
+        } else {
+            innerAdd(source, dependency);
         }
     }
 

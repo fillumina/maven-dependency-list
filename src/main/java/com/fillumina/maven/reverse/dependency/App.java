@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -31,7 +30,7 @@ public class App {
         }
     }
 
-    private static void execution(ArgParser arguments) throws IOException {
+    static void execution(ArgParser arguments) throws IOException {
         if (arguments.isError() || arguments.isHelp()) {
             System.out.println(ArgParser.getUsage());
 
@@ -90,7 +89,7 @@ public class App {
                             System.out.println("backup " + pomFile.toString() + " -> " + bkPomFile.toString());
                             Files.move(pomFile.toPath(), bkPomFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                         }
-                        Files.writeString(pomPath, modifiedPom, StandardOpenOption.CREATE);
+                        Files.writeString(pomPath, modifiedPom);
                         System.out.println("modified artifact in " + pomPath.toString());
                     }
                 } else {

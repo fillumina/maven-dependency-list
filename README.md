@@ -4,9 +4,9 @@
 
 ## Build
 
-The Java project can be built with the usual `mvn clean install` given the presence in the path of both a JDK 1.8+ and maven.
+The Java project can be built with the usual `mvn clean install` given the presence in the path of both a JDK 11+ and maven.
 
-Use the script  `run-script-creator.sh` (derived from this [gist](https://gist.github.com/briandealwis/782862/9cc9ef8a78af3bb78a692313f8bfa6fb76ab4663)) to create a `java` command line application embedded into a shell script (`run-maven-dependency-list.sh`). It needs a compatible [JRE 8](https://www.java.com/en/download/manual.jsp) available in the system.
+Use the script  `run-script-creator.sh` (derived from this [gist](https://gist.github.com/briandealwis/782862/9cc9ef8a78af3bb78a692313f8bfa6fb76ab4663)) to create a `java` command line application embedded into a shell script (`run-maven-dependency-list.sh`). It needs a compatible JRE 11 available in the system.
 
 If you don't have access to a `bash` shell you can use the application by calling it directly with: `java -jar maven-dependency-list-1.2.jar`  where the `jar` file is created in the `target` folder after compilation (`mvn clean install`).
 
@@ -48,6 +48,8 @@ It accepts the following parameters:
 - `-b` make a backup copy of the changed `pom.xml` -> `pom.xml.bak` (only with `-c`)
 
 - `-j` print a full java exception stacktrace on error (for debugging)
+
+- `-v` omit dependencies/plugins with null version
 
 - It accepts any number of directories that will be traversed searching for sub-projects (a directory containing a `pom.xml` file).
 

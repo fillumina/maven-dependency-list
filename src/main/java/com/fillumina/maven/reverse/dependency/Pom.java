@@ -3,6 +3,7 @@ package com.fillumina.maven.reverse.dependency;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.XMLConstants;
@@ -38,7 +39,7 @@ public class Pom {
             // parse XML file
             DocumentBuilder db = dbf.newDocumentBuilder();
 
-            InputStream is = new ByteArrayInputStream(pom.getBytes());
+            InputStream is = new ByteArrayInputStream(pom.getBytes(StandardCharsets.UTF_8));
             Document doc = db.parse(is);
 
             // optional, but recommended
