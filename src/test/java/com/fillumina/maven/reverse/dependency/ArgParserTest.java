@@ -15,7 +15,7 @@ public class ArgParserTest {
 
     @Test
     public void shouldExplainEveryOptionItAccepts() {
-        for (String option : new String[]{"-h", "--help", "-r", "-n", "-o", "-p", "-d", "-v", "-c", "-b", "-j"}) {
+        for (String option : new String[]{"-h", "--help", "-r", "-n", "-o", "-a", "-p", "-d", "-v", "-c", "-b", "-j"}) {
             assertTrue(usage().contains(option), option + " is not explained in the help");
         }
         assertTrue(usage().contains("group:artifact:ver:new"), usage());
@@ -116,6 +116,12 @@ public class ArgParserTest {
     public void shouldRejectAnArtifactToChangeMixedWithTheOutdatedFilter() {
         assertThrows(IllegalArgumentException.class,
                 () -> new ArgParser(new String[]{"-c", "g:a:1.0:2.0", "-o", "g:a:2.0", "."}));
+    }
+
+    @Test
+    public void shouldLeaveAllFoldersOffUnlessAsked() {
+        assertFalse(new ArgParser(new String[]{"."}).isAllFolders());
+        assertTrue(new ArgParser(new String[]{"-a", "."}).isAllFolders());
     }
 
     @Test

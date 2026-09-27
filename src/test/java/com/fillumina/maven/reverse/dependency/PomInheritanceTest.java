@@ -120,7 +120,7 @@ public class PomInheritanceTest {
 
         String[] output = run();
 
-        assertEquals("", output[1], "stderr:" + output[1]);
+        assertNoWarnings(output[1]);
         assertTrue(output[0].contains("org.acme:lib:5.0"), "stdout:" + output[0]);
     }
 
@@ -183,7 +183,7 @@ public class PomInheritanceTest {
         assertTrue(child.contains("<version>4.0</version>"), child);
         assertFalse(child.contains(PROPERTY_VERSION), child);
         assertTrue(output[0].contains("modified artifact"), "stdout:" + output[0]);
-        assertEquals("", output[1], "stderr:" + output[1]);
+        assertNoWarnings(output[1]);
     }
 
     @Test
@@ -219,7 +219,15 @@ public class PomInheritanceTest {
     private static void assertResolved(String[] output, String version) {
         assertTrue(output[0].contains("org.acme:lib:" + version),
                 "expected " + version + ", stdout:" + output[0] + " stderr:" + output[1]);
-        assertEquals("", output[1], "stderr:" + output[1]);
+        assertNoWarnings(output[1]);
+    }
+
+    /**
+     * Every run says how much it read on stderr, so a clean run is one with no
+     * warning in it rather than one with nothing on it.
+     */
+    private static void assertNoWarnings(String stderr) {
+        assertFalse(stderr.contains("WARNING"), stderr);
     }
 
     private static void assertUnresolved(String[] output, String warning) {

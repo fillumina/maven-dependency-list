@@ -16,7 +16,7 @@ This application is geared towards directory of java projects with useful featur
 
 ## Versions
 
-- **1.3.0** 27/09/26 require JDK 21+, upgrade to JUnit 6 and current build plugins, add `-o` to report the projects behind on an artifact, order versions the way Maven does, resolve a version from a parent pom found on disk, report a version that cannot be resolved instead of guessing it, pin an inherited version in the file that declares it, document the limits, the output format and the exit codes, fix the `scm` connection
+- **1.3.0** 27/09/26 require JDK 21+, upgrade to JUnit 6 and current build plugins, add `-o` to report the projects behind on an artifact, add `-a` to look inside folders that group projects, say on every run how much was read, order versions the way Maven does, resolve a version from a parent pom found on disk, report a version that cannot be resolved instead of guessing it, pin an inherited version in the file that declares it, document the limits, the output format and the exit codes, fix the `scm` connection
 
 - **1.2.4** 27/09/26 fix corrupted `pom.xml` when a version change shortens the file, fix errors with `-n -v` and `-n -r`, require JDK 11+
 
@@ -55,6 +55,8 @@ It accepts the following parameters:
 
 - `-v` omit dependencies/plugins with null version
 
+- `-a` also look inside folders that have no `pom.xml` of their own, for a tree whose projects are grouped under plain folders. A `target` or `.git` folder is still left alone, and only in this mode, so nothing that the default already reads is affected
+
 - `-o group:artifact:ver` keep only the projects still on an **older** version of that artifact. The version you pass is the one you consider current: `-o org.acme:lib:4.2` reports every project still on 3.1 or 4.2-SNAPSHOT and leaves the ones already on 4.2 or newer out. A dependency whose version could not be resolved is always kept, because nothing can say it is not behind. It cannot be mixed with `-c`, and with `-n` it keeps nothing, since `-n` reports projects with no dependencies at all
 
 - It accepts any number of directories that will be traversed searching for sub-projects (a directory containing a `pom.xml` file).
@@ -67,7 +69,7 @@ This tool reads the text of each `pom.xml`; it is not a Maven model. It does not
 - invent a version. A version written as `${property}` that cannot be resolved keeps its placeholder in the listing and is named on `stderr`. `-v` does not hide it, because it is not a version that was never declared, it is one that could not be read;
 - resolve transitive dependencies, the local repository or version conflicts. For a single project's real tree use the [Maven Dependency Tree Plugin](https://maven.apache.org/plugins/maven-dependency-plugin/tree-mojo.html);
 - tell a `<dependency>` inside `<dependencyManagement>` from a declared one, so `-c` rewrites a managed version exactly as it rewrites a declared one;
-- enter a directory that has no `pom.xml`. The given folder is always entered, and so is every folder that holds a `pom.xml` of its own, but a folder that merely groups projects is not: give each of them its own path on the command line, or give the grouping folder a `pom.xml` of its own;
+- enter a directory that has no `pom.xml`. The given folder is always entered, and so is every folder that holds a `pom.xml` of its own, but a folder that merely groups projects is not, unless `-a` is given: give each of them its own path on the command line, give the grouping folder a `pom.xml` of its own, or pass `-a`;
 - read anything but `pom.xml`, so `build.gradle`, `*.gradle.kts` and ivy files are out of reach.
 
 Three details that are easy to trip over:
@@ -80,7 +82,7 @@ Three details that are easy to trip over:
 
 Output is plain text on `stdout`: one `group:artifact:version` per line, with a project's dependencies indented by a tab. A dependency with no version prints as `group:artifact`. The format is meant to be read or piped into `grep` and `awk`.
 
-Every run prints a `configuration:` block and a `searching in:` line before the listing, so a script that wants only the data has to skip them. Two things add a `WARNING:` line on `stderr`, which never mixes into the data on `stdout`: a version that could not be resolved, and a pom that declares the artifact `-c` was pointed at but did not change, which is how a sweep tells you which projects it did not move.
+Every run prints a `configuration:` block and a `searching in:` line before the listing, so a script that wants only the data has to skip them, and one line on `stderr` at the end saying how many `pom.xml` files were read and how many entries were listed. The two numbers are usually different: a project that declares no dependencies gets no line of its own unless `-n` is used, which is why both are printed. A run that read no `pom.xml` at all says so in a `WARNING:`. Two things add a `WARNING:` line on `stderr`, which never mixes into the data on `stdout`: a version that could not be resolved, and a pom that declares the artifact `-c` was pointed at but did not change, which is how a sweep tells you which projects it did not move.
 
 | Situation | What is printed | Exit code |
 | --- | --- | --- |

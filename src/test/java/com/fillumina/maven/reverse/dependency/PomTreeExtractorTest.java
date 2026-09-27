@@ -62,8 +62,40 @@ public class PomTreeExtractorTest {
         assertEquals(3, found().size());
     }
 
+    @Test
+    public void shouldEnterTheGroupingFoldersWhenAskedTo() throws IOException {
+        writePom(root.resolve("pom.xml"));
+        writePom(root.resolve("a/pom.xml"));
+        writePom(root.resolve("tools/codegen/pom.xml"));
+
+        List<Path> found = PomTreeExtractor.readAllPomsInTree(root, true).stream().sorted().toList();
+
+        assertTrue(found.contains(root.resolve("tools/codegen/pom.xml")), found.toString());
+    }
+
+    @Test
+    public void shouldStillLeaveTargetAndGitAloneWhenEnteringEveryFolder() throws IOException {
+        writePom(root.resolve("pom.xml"));
+        writePom(root.resolve("target/shaded/pom.xml"));
+        writePom(root.resolve(".git/hooks/pom.xml"));
+        writePom(root.resolve("tools/codegen/pom.xml"));
+
+        List<Path> found = PomTreeExtractor.readAllPomsInTree(root, true).stream().sorted().toList();
+
+        assertEquals(List.of(root.resolve("pom.xml"), root.resolve("tools/codegen/pom.xml")), found);
+    }
+
+    @Test
+    public void shouldNotEnterAGroupingFolderWhenNotAskedTo() throws IOException {
+        writePom(root.resolve("pom.xml"));
+        writePom(root.resolve("tools/codegen/pom.xml"));
+
+        assertEquals(List.of(root.resolve("pom.xml")),
+                PomTreeExtractor.readAllPomsInTree(root, false).stream().sorted().toList());
+    }
+
     private List<Path> found() throws IOException {
-        return PomTreeExtractor.readAllPomsInTree(root).stream().sorted().toList();
+        return PomTreeExtractor.readAllPomsInTree(root, false).stream().sorted().toList();
     }
 
     private static void writePom(Path pom) throws IOException {

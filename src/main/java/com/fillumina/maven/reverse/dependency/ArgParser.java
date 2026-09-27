@@ -23,6 +23,7 @@ public class ArgParser {
     private static final String REVERSE = "-r";
     private static final String OMIT_NULL_VERSION = "-v";
     private static final String OUTDATED = "-o";
+    private static final String ALL_FOLDERS = "-a";
 
     private static final String[] USAGE = {
         "maven-dependency-list " + VERSION + " (" + VERSION_DATA + ")",
@@ -32,9 +33,9 @@ public class ArgParser {
         "",
         "usage: maven-dependency-list [options] <folder> [<folder>...]",
         "",
-        "  Each folder is searched for pom.xml. The folder you name is always entered,",
-        "  and so is every folder that has a pom.xml of its own. A folder that only",
-        "  groups projects is not entered, so pass those folders as well.",
+        "  Each folder is searched for pom.xml. The folder you name is always entered, and",
+        "  so is every folder that has a pom.xml of its own. A folder that only groups",
+        "  projects is not entered unless " + ALL_FOLDERS + " is given.",
         "",
         "what it shows",
         "  " + REVERSE + "  list by dependency instead of by project: each dependency",
@@ -52,6 +53,9 @@ public class ArgParser {
         "        both are matched as a substring: what you give is wrapped in ^.* and",
         "        .*$, so an anchor of your own will not match anything",
         "  " + OMIT_NULL_VERSION + "  leave out the dependencies and plugins with no version",
+        "  " + ALL_FOLDERS + " also look inside folders that have no pom.xml of their own, for a",
+        "        tree whose projects are grouped under plain folders. A target or .git",
+        "        folder is still left alone",
         "",
         "what it changes",
         "  " + CHANGE_ARTIFACT + " group:artifact:ver:new",
@@ -88,6 +92,7 @@ public class ArgParser {
     private boolean makeBackupCopy;
     private boolean fullStacktrace;
     private boolean omitNullVersion;
+    private boolean allFolders;
     private PackageId outdatedArtifact;
 
     public ArgParser(String[] args) {
@@ -140,6 +145,8 @@ public class ArgParser {
                     omitNullVersion = true;
                 } else if (OUTDATED.equals(s)) {
                     outdated = true;
+                } else if (ALL_FOLDERS.equals(s)) {
+                    allFolders = true;
                 } else {
                     paths.add(s);
                 }
@@ -208,6 +215,14 @@ public class ArgParser {
     }
 
     /**
+     * Whether to look inside folders that have no pom.xml of their own, which is
+     * what a tree of projects grouped under plain folders needs.
+     */
+    public boolean isAllFolders() {
+        return allFolders;
+    }
+
+    /**
      * The artifact to report on, or null when every dependency should be shown.
      */
     public PackageId getOutdatedArtifact() {
@@ -222,6 +237,7 @@ public class ArgParser {
                 (projectRegexp != null ? "\nproject regexp=" + projectRegexp : "") +
                 (dependencyRegexp != null ? "\ndependency regexp=" + dependencyRegexp : "") +
                 (omitNullVersion ? "\nomit null version=" + omitNullVersion : "") +
+                (allFolders ? "\nall folders=" + allFolders : "") +
                 (outdatedArtifact != null ? "\noutdated artifact=" + outdatedArtifact : "") +
                 (artifactToChange != null ? "\nartifact to change=" + artifactToChange : "") +
                 (newVersion != null ? "\nnew version=" + newVersion : "") +

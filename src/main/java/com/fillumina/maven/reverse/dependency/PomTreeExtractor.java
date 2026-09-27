@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -18,14 +19,27 @@ public class PomTreeExtractor implements FileVisitor<Path> {
 
     private static final Path POM_FILENAME = Paths.get("pom.xml");
 
-    public static List<Path> readAllPomsInTree(Path path) throws IOException {
-        PomTreeExtractor visitor = new PomTreeExtractor();
+    /**
+     * Folders that are never a project and are only walked into when the caller
+     * asked for every folder, so that a build output directory does not turn a
+     * report into a crawl. They are only ever skipped in that mode, because in
+     * the other they are left out by the rule below anyway.
+     */
+    private static final Set<String> NEVER_A_PROJECT = Set.of("target", ".git");
+
+    public static List<Path> readAllPomsInTree(Path path, boolean allFolders) throws IOException {
+        PomTreeExtractor visitor = new PomTreeExtractor(allFolders);
         Files.walkFileTree(path, visitor);
         return visitor.paths;
     }
 
     private final List<Path> paths = new ArrayList<>();
+    private final boolean allFolders;
     private boolean firstDir = true;
+
+    private PomTreeExtractor(boolean allFolders) {
+        this.allFolders = allFolders;
+    }
 
     @Override
     public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
@@ -43,7 +57,12 @@ public class PomTreeExtractor implements FileVisitor<Path> {
             paths.add(pom);
             return FileVisitResult.CONTINUE;
         }
-        return isGivenFolder ? FileVisitResult.CONTINUE : FileVisitResult.SKIP_SUBTREE;
+        if (isGivenFolder || allFolders) {
+            return NEVER_A_PROJECT.contains(dir.getFileName().toString())
+                    ? FileVisitResult.SKIP_SUBTREE
+                    : FileVisitResult.CONTINUE;
+        }
+        return FileVisitResult.SKIP_SUBTREE;
     }
 
     @Override

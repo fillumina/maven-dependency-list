@@ -141,6 +141,56 @@ public class AppTest {
     }
 
     @Test
+    public void shouldSayHowMuchItRead() throws IOException {
+        writeService("a", "1.0");
+        writeService("b", "1.0");
+
+        String[] captured = CommandOutput.capture(() -> assertEquals(0, App.run(new String[]{root.toString()})));
+
+        assertTrue(captured[1].contains("read 2 pom.xml, listed 2 entries"), captured[1]);
+    }
+
+    @Test
+    public void shouldExplainWhyThereAreFewerEntriesThanPoms() throws IOException {
+        writePom("proj", LONG_VERSION);
+        Path empty = root.resolve("no-deps");
+        Files.createDirectories(empty);
+        Files.writeString(empty.resolve("pom.xml"),
+                "<project><modelVersion>4.0.0</modelVersion><groupId>com.acme</groupId>"
+                        + "<artifactId>boring</artifactId><version>1</version></project>");
+
+        String[] captured = CommandOutput.capture(() -> assertEquals(0, App.run(new String[]{root.toString()})));
+
+        assertTrue(captured[1].contains("read 2 pom.xml, listed 1 entries"), captured[1]);
+        assertTrue(captured[1].contains("unless -n is used"), captured[1]);
+    }
+
+    @Test
+    public void shouldSayWhenItReadNothingAtAll() throws IOException {
+        // a folder that exists and holds no pom is not an error, so without this
+        // line it is indistinguishable from a tree with nothing to report
+        Path empty = root.resolve("no-projects-here");
+        Files.createDirectories(empty);
+
+        String[] captured = CommandOutput.capture(() ->
+                assertEquals(0, App.run(new String[]{empty.toString()})));
+
+        assertTrue(captured[1].contains("no pom.xml was read at all"), captured[1]);
+    }
+
+    @Test
+    public void shouldCountThePomsItChangedInChangeMode() throws IOException {
+        Path pom = writePom("proj", LONG_VERSION);
+
+        String[] captured = CommandOutput.capture(() -> App.run(new String[]{
+                "-c", "junit:junit:" + LONG_VERSION + ":4.9", root.toString()}));
+
+        assertTrue(captured[1].contains("read 1 pom.xml"), captured[1]);
+        assertFalse(captured[1].contains("listed"), captured[1]);
+        assertTrue(Files.readString(pom).contains("<version>4.9</version>"));
+    }
+
+    @Test
     public void shouldExitZeroOnSuccess() {
         writePomUnchecked("proj", LONG_VERSION);
 

@@ -76,6 +76,28 @@ public class App {
         return VersionComparator.compare(dependency.getVersion(), wanted.getVersion()) < 0;
     }
 
+    /**
+     * Says how much of what was passed was actually read, so that a short listing
+     * can be told apart from a tree that was not searched. A project that declares
+     * nothing gets no line of its own unless `-n` is used, so the count of poms and
+     * the count of lines are not the same, and printing one without the other would
+     * be how a tree that was not searched looks like a tree with nothing to report.
+     *
+     * @param entries the lines printed, or -1 when the run changed poms instead
+     */
+    private static void reportCoverage(int poms, int entries) {
+        if (poms == 0) {
+            return;
+        }
+        if (entries < 0) {
+            System.err.println("read " + poms + " pom.xml");
+            return;
+        }
+        System.err.println("read " + poms + " pom.xml, listed " + entries
+                + " entries. A project that declares nothing gets no line of its own"
+                + " unless -n is used.");
+    }
+
     static void execution(ArgParser arguments) throws IOException {
         if (arguments.isError() || arguments.isHelp()) {
             System.out.println(ArgParser.getUsage());
@@ -94,7 +116,7 @@ public class App {
             for (String folderName : arguments.getFolderNames()) {
                 System.out.println("searching in: " + folderName);
                 Path path = Paths.get(folderName);
-                pomPaths.addAll(PomTreeExtractor.readAllPomsInTree(path));
+                pomPaths.addAll(PomTreeExtractor.readAllPomsInTree(path, arguments.isAllFolders()));
             }
 
             final Pattern moduleRegexp = arguments.getModuleRegexp();
@@ -106,6 +128,10 @@ public class App {
                     arguments.isOmitNullVersion());
 
             System.out.println("");
+            if (pomPaths.isEmpty()) {
+                System.err.println("WARNING: no pom.xml was read at all, "
+                        + "so nothing was searched and nothing below was found");
+            }
 
             final boolean noDependencies = arguments.isNoDependencies();
             final PackageId artifactToChange = arguments.getArtifactToChange();
@@ -160,6 +186,9 @@ public class App {
                 } else {
                     associationBuilder.getMap().values().stream().forEach(System.out::println);
                 }
+                reportCoverage(pomPaths.size(), associationBuilder.getMap().size());
+            } else {
+                reportCoverage(pomPaths.size(), -1);
             }
         }
     }
