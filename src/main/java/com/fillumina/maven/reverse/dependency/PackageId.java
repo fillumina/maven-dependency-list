@@ -27,11 +27,31 @@ public class PackageId {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;
-        this.str = groupId + SEPARATOR + artifactId + (version == null ? "" : SEPARATOR + version);
+        this.str = describe(groupId, artifactId, version);
+    }
+
+    /**
+     * The group, the artifact and the version, joined by {@value #SEPARATOR}, with
+     * whatever is missing left out rather than printed as null. A pom that declares
+     * neither a groupId of its own nor a parent to inherit one from has no group,
+     * and saying so is better than a literal null in a listing.
+     */
+    private static String describe(String groupId, String artifactId, String version) {
+        StringBuilder description = new StringBuilder();
+        if (groupId != null && !groupId.isEmpty()) {
+            description.append(groupId).append(SEPARATOR);
+        }
+        if (artifactId != null) {
+            description.append(artifactId);
+        }
+        if (version != null) {
+            description.append(SEPARATOR).append(version);
+        }
+        return description.toString();
     }
 
     public String getName() {
-        return groupId + SEPARATOR + artifactId;
+        return describe(groupId, artifactId, null);
     }
 
     public String getGroupId() {

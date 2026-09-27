@@ -16,7 +16,7 @@ This application is geared towards directory of java projects with useful featur
 
 ## Versions
 
-- **1.3.0** 27/09/26 require JDK 21+, upgrade to JUnit 6 and current build plugins, add `-o` to report the projects behind on an artifact, resolve a version from a parent pom found on disk, report a version that cannot be resolved instead of guessing it, pin an inherited version in the file that declares it, document the limits, the output format and the exit codes, fix the `scm` connection
+- **1.3.0** 27/09/26 require JDK 21+, upgrade to JUnit 6 and current build plugins, add `-o` to report the projects behind on an artifact, order versions the way Maven does, resolve a version from a parent pom found on disk, report a version that cannot be resolved instead of guessing it, pin an inherited version in the file that declares it, document the limits, the output format and the exit codes, fix the `scm` connection
 
 - **1.2.4** 27/09/26 fix corrupted `pom.xml` when a version change shortens the file, fix errors with `-n -v` and `-n -r`, require JDK 11+
 
@@ -55,7 +55,7 @@ It accepts the following parameters:
 
 - `-v` omit dependencies/plugins with null version
 
-- `-o group:artifact:ver` keep only the projects still on an **older** version of that artifact, so that a tree can be asked which ones are behind without writing a regexp. A dependency whose version could not be resolved is always kept, because nothing can say it is not behind. It cannot be mixed with `-c`, and with `-n` it keeps nothing, since `-n` reports projects with no dependencies at all
+- `-o group:artifact:ver` keep only the projects still on an **older** version of that artifact. The version you pass is the one you consider current: `-o org.acme:lib:4.2` reports every project still on 3.1 or 4.2-SNAPSHOT and leaves the ones already on 4.2 or newer out. A dependency whose version could not be resolved is always kept, because nothing can say it is not behind. It cannot be mixed with `-c`, and with `-n` it keeps nothing, since `-n` reports projects with no dependencies at all
 
 - It accepts any number of directories that will be traversed searching for sub-projects (a directory containing a `pom.xml` file).
 
