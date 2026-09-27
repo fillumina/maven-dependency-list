@@ -40,9 +40,9 @@ public class App {
             List<Path> pomPaths = new ArrayList<>();
 
             if (arguments.isReverse()) {
-                System.out.println("\nmodules using dependencies\n");
+                System.out.println("\nprojects using dependencies\n");
             } else {
-                System.out.println("\ndependencies used by module\n");
+                System.out.println("\ndependencies used by project\n");
             }
 
             for (String folderName : arguments.getFolderNames()) {

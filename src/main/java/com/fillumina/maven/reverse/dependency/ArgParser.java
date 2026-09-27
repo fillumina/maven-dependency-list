@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
  * @author Francesco Illuminati <fillumina@gmail.com>
  */
 public class ArgParser {
-    private static final String VERSION = "1.2.4";
+    private static final String VERSION = "1.3.0";
     private static final String VERSION_DATA = "27/09/26";
 
     private static final String HELP_LONG = "--help";
