@@ -31,14 +31,19 @@ public class PomTreeExtractor implements FileVisitor<Path> {
     public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
             throws IOException {
         final Path pom = dir.resolve(POM_FILENAME);
+        // only the directory that was given is entered when it holds no pom
+        // itself, so that a plain folder of projects is scanned. Any other folder
+        // without a pom is a folder that groups projects rather than one, and what
+        // is in it is not this tool's business. Deciding that from the first
+        // directory visited made the answer depend on the order the filesystem
+        // happened to list them in.
+        boolean isGivenFolder = firstDir;
+        firstDir = false;
         if (Files.exists(pom)) {
             paths.add(pom);
             return FileVisitResult.CONTINUE;
-        } else if (firstDir) {
-            firstDir = false;
-            return FileVisitResult.CONTINUE;
         }
-        return FileVisitResult.SKIP_SUBTREE;
+        return isGivenFolder ? FileVisitResult.CONTINUE : FileVisitResult.SKIP_SUBTREE;
     }
 
     @Override

@@ -67,7 +67,7 @@ This tool reads the text of each `pom.xml`; it is not a Maven model. It does not
 - invent a version. A version written as `${property}` that cannot be resolved keeps its placeholder in the listing and is named on `stderr`. `-v` does not hide it, because it is not a version that was never declared, it is one that could not be read;
 - resolve transitive dependencies, the local repository or version conflicts. For a single project's real tree use the [Maven Dependency Tree Plugin](https://maven.apache.org/plugins/maven-dependency-plugin/tree-mojo.html);
 - tell a `<dependency>` inside `<dependencyManagement>` from a declared one, so `-c` rewrites a managed version exactly as it rewrites a declared one;
-- enter a directory that has no `pom.xml`. Only the given root and the directories holding a `pom.xml` are scanned, so projects grouped under a non-project directory are not found;
+- enter a directory that has no `pom.xml`. The given folder is always entered, and so is every folder that holds a `pom.xml` of its own, but a folder that merely groups projects is not: give each of them its own path on the command line, or give the grouping folder a `pom.xml` of its own;
 - read anything but `pom.xml`, so `build.gradle`, `*.gradle.kts` and ivy files are out of reach.
 
 Three details that are easy to trip over:
