@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -74,7 +75,7 @@ public class AppTest {
     public void shouldListTheProjectsWhenOmittingNullVersions() throws IOException {
         writePom("proj", LONG_VERSION);
 
-        String output = captureStdOut(() -> App.execution(new ArgParser(new String[]{"-n", "-v", root.toString()})));
+        String output = capture(() -> App.execution(new ArgParser(new String[]{"-n", "-v", root.toString()})))[0];
 
         assertTrue(output.contains(PROJECT), output);
     }
@@ -83,9 +84,57 @@ public class AppTest {
     public void shouldListNothingForProjectsWithoutDependenciesInReverseMode() throws IOException {
         writePom("proj", LONG_VERSION);
 
-        String output = captureStdOut(() -> App.execution(new ArgParser(new String[]{"-n", "-r", root.toString()})));
+        String output = capture(() -> App.execution(new ArgParser(new String[]{"-n", "-r", root.toString()})))[0];
 
         assertFalse(output.contains(PROJECT), output);
+    }
+
+    @Test
+    public void shouldExitZeroOnSuccess() {
+        writePomUnchecked("proj", LONG_VERSION);
+
+        assertEquals(0, App.run(new String[]{root.toString()}));
+    }
+
+    @Test
+    public void shouldFailOnAPathThatDoesNotExist() throws IOException {
+        String[] captured = capture(() -> assertEquals(1, App.run(new String[]{root.resolve("absent").toString()})));
+
+        assertTrue(captured[1].startsWith("ERROR: cannot read "), captured[1]);
+        assertFalse(captured[0].contains("TERMINATE"), captured[0]);
+    }
+
+    @Test
+    public void shouldReportAMalformedArgumentInOneLine() throws IOException {
+        String[] captured = capture(() -> assertEquals(1, App.run(new String[]{"-c", "a:b:c", root.toString()})));
+
+        assertEquals("ERROR: expected 4 fields separated by ':', was= 'a:b:c'" + System.lineSeparator(),
+                captured[1]);
+        assertFalse(captured[1].contains("\tat "), captured[1]);
+    }
+
+    @Test
+    public void shouldReportAnInvalidRegexpInOneLine() throws IOException {
+        String[] captured = capture(() -> assertEquals(1, App.run(new String[]{"-p", "[", root.toString()})));
+
+        assertTrue(captured[1].startsWith("ERROR: "), captured[1]);
+        assertFalse(captured[1].contains("\tat "), captured[1]);
+    }
+
+    @Test
+    public void shouldReportAMalformedArgumentInOneLineEvenWithJ() throws IOException {
+        String[] captured = capture(() -> assertEquals(1, App.run(new String[]{"-j", "-c", "a:b:c", root.toString()})));
+
+        assertEquals("ERROR: expected 4 fields separated by ':', was= 'a:b:c'" + System.lineSeparator(),
+                captured[1]);
+    }
+
+    private void writePomUnchecked(String folder, String version) {
+        try {
+            writePom(folder, version);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private String[] change(String oldVersion, String newVersion) {
@@ -117,16 +166,22 @@ public class AppTest {
                 + "</project>";
     }
 
-    private static String captureStdOut(IoRunnable runnable) throws IOException {
-        PrintStream original = System.out;
-        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+    private static String[] capture(IoRunnable runnable) throws IOException {
+        PrintStream originalOut = System.out;
+        PrintStream originalErr = System.err;
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
         try {
-            System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
+            System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
+            System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
             runnable.run();
         } finally {
-            System.setOut(original);
+            System.setOut(originalOut);
+            System.setErr(originalErr);
         }
-        return captured.toString(StandardCharsets.UTF_8);
+        return new String[]{
+                out.toString(StandardCharsets.UTF_8),
+                err.toString(StandardCharsets.UTF_8)};
     }
 
     @FunctionalInterface

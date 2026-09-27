@@ -17,16 +17,25 @@ import java.util.regex.Pattern;
 public class App {
 
     public static void main(String[] args) {
-        ArgParser arguments = new ArgParser(args);
+        int status = run(args);
+        if (status != 0) {
+            System.exit(status);
+        }
+    }
+
+    static int run(String[] args) {
+        ArgParser arguments = null;
         try {
+            arguments = new ArgParser(args);
             execution(arguments);
+            return 0;
         } catch (Throwable t) {
-            if (arguments.isFullStacktrace()) {
+            if (arguments != null && arguments.isFullStacktrace()) {
                 t.printStackTrace();
             } else {
                 System.err.println("ERROR: " + t.getMessage());
             }
-            System.exit(1);
+            return 1;
         }
     }
 

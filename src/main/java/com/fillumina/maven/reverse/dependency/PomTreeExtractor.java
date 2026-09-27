@@ -48,8 +48,7 @@ public class PomTreeExtractor implements FileVisitor<Path> {
 
     @Override
     public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-        System.out.println("TERMINATE ON " + file);
-        return FileVisitResult.TERMINATE;
+        throw new IOException("cannot read " + file, exc);
     }
 
     @Override

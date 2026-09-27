@@ -51,7 +51,7 @@ It accepts the following parameters:
 
 - `-b` make a backup copy of the changed `pom.xml` -> `pom.xml.bak` (only with `-c`)
 
-- `-j` print a full java exception stacktrace on error (for debugging)
+- `-j` print a full java exception stacktrace on error (for debugging). It covers failures while reading and rewriting the poms, not a malformed command line, which is always reported in one line
 
 - `-v` omit dependencies/plugins with null version
 
@@ -86,8 +86,8 @@ Every run prints a `configuration:` block and a `searching in:` line before the 
 | `-h`, or no arguments at all | the usage text on `stdout` | 0 |
 | a `pom.xml` that cannot be read or parsed | `ERROR: <message>` on `stderr` | 1 |
 | the same, with `-j` | the full Java stack trace on `stderr` | 1 |
-| a malformed argument, such as `-c` without four fields | a raw Java stack trace on `stderr`; `-j` has no effect | 1 |
-| a path that does not exist | `TERMINATE ON <path>` on `stdout`, no error | 0 |
+| a malformed command line, such as `-c` without four fields or an invalid regexp | one `ERROR:` block on `stderr`, never a stack trace. A bad regexp repeats the offending pattern over a few lines | 1 |
+| a path that does not exist or cannot be read | `ERROR: cannot read <path>` on `stderr` | 1 |
 
 ## Examples
 
