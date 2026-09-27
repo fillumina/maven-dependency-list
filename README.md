@@ -16,7 +16,7 @@ This application is geared towards directory of java projects with useful featur
 
 ## Versions
 
-- **1.3.0** 27/09/26 require JDK 21+, upgrade to JUnit 6 and current build plugins, add `-P` to resolve a version from a parent pom, report a version that cannot be resolved instead of guessing it, document the limits, the output format and the exit codes, fix the `scm` connection
+- **1.3.0** 27/09/26 require JDK 21+, upgrade to JUnit 6 and current build plugins, resolve a version from a parent pom found on disk, report a version that cannot be resolved instead of guessing it, pin an inherited version in the file that declares it, document the limits, the output format and the exit codes, fix the `scm` connection
 
 - **1.2.4** 27/09/26 fix corrupted `pom.xml` when a version change shortens the file, fix errors with `-n -v` and `-n -r`, require JDK 11+
 
@@ -55,15 +55,13 @@ It accepts the following parameters:
 
 - `-v` omit dependencies/plugins with null version
 
-- `-P` read the properties of the parent poms reachable on disk through `<relativePath>`, so a version written as a property inherited from a parent is resolved
-
 - It accepts any number of directories that will be traversed searching for sub-projects (a directory containing a `pom.xml` file).
 
 ## Limitations
 
 This tool reads the text of each `pom.xml`; it is not a Maven model. It does not:
 
-- consult anything outside the file it is reading: a `dependencyManagement`, an imported BOM and a profile are invisible to it. `-P` widens that to the parents reachable on disk through `<relativePath>`, and no further: a parent that lives only in the local repository is still invisible, and so is a grandparent beyond the files on disk;
+- consult anything outside the files on disk. A `<parent>` is followed through its `<relativePath>`, and the file is only trusted when its groupId, artifactId and version are the ones the child declared, so an unrelated pom that happens to sit at `../pom.xml` is ignored. A `dependencyManagement`, an imported BOM and a profile are never read, and a parent that lives only in the local repository stays invisible;
 - invent a version. A version written as `${property}` that cannot be resolved keeps its placeholder in the listing and is named on `stderr`. `-v` does not hide it, because it is not a version that was never declared, it is one that could not be read;
 - resolve transitive dependencies, the local repository or version conflicts. For a single project's real tree use the [Maven Dependency Tree Plugin](https://maven.apache.org/plugins/maven-dependency-plugin/tree-mojo.html);
 - tell a `<dependency>` inside `<dependencyManagement>` from a declared one, so `-c` rewrites a managed version exactly as it rewrites a declared one;

@@ -32,18 +32,28 @@ final class ParentPom {
      */
     static final int MAX_DEPTH = 16;
 
+    /**
+     * A tree of projects walks over the same few parents over and over, and
+     * parsing is the expensive part, so each file is parsed once. The tool is
+     * single threaded and lives for one run, so the map is never evicted and
+     * never guarded.
+     */
+    private static final Map<Path, Document> PARSED = new HashMap<>();
+
     private ParentPom() {
     }
 
     /**
-     * Returns the properties visible from {@code pom}: the ones it declares itself,
-     * which win, over the ones declared by each ancestor reached through
-     * {@code <relativePath>}. A property that cannot be read is simply absent, and
-     * the caller is left to say so.
+     * Returns the properties visible from {@code pom}: the ones it declares
+     * itself, which win, over the ones declared by each ancestor reached through
+     * {@code <relativePath>}. A parent that is not on disk, or that turns out not
+     * to be the one the pom declares, contributes nothing and the caller is left
+     * to say so.
      */
     static Map<String, String> inheritedProperties(Path pom, Map<String, String> ownProperties) {
         Map<String, String> inherited = new HashMap<>();
         Set<Path> visited = new HashSet<>();
+        Element declaredParent = null;
         Path current = absolute(pom);
         for (int depth = 0; current != null && depth < MAX_DEPTH; depth++) {
             if (!visited.add(current) || !Files.isReadable(current)) {
@@ -53,15 +63,58 @@ final class ParentPom {
             if (document == null) {
                 break;
             }
+            if (depth > 0 && !isTheDeclaredParent(declaredParent, document)) {
+                // a file that is not the parent the child named must not be
+                // allowed to lend it properties
+                break;
+            }
             readProperties(document, inherited);
-            current = parentOf(current, document);
+            declaredParent = firstElement(document, "parent");
+            current = parentPath(current, declaredParent);
         }
         inherited.putAll(ownProperties);
         return inherited;
     }
 
-    private static Path parentOf(Path pom, Document document) {
-        Element parent = firstElement(document, "parent");
+    /**
+     * Whether the file just opened really is the parent the child declared, by
+     * the coordinates the child gave. A version either side of which is a
+     * property is not checked, because it cannot be without resolving first, and
+     * refusing on that would be worse than trusting it.
+     */
+    private static boolean isTheDeclaredParent(Element declared, Document candidate) {
+        if (declared == null) {
+            return false;
+        }
+        Element root = candidate.getDocumentElement();
+        return agrees(text(declared, "groupId"), text(root, "groupId"))
+                && agrees(text(declared, "artifactId"), text(root, "artifactId"))
+                && agrees(text(declared, "version"), text(root, "version"));
+    }
+
+    private static boolean agrees(String declared, String found) {
+        if (declared == null || declared.isEmpty()) {
+            return true;
+        }
+        if (found == null || found.isEmpty()) {
+            return false;
+        }
+        if (isProperty(declared) || isProperty(found)) {
+            return true;
+        }
+        return declared.trim().equals(found.trim());
+    }
+
+    private static boolean isProperty(String value) {
+        return value.startsWith("${") && value.endsWith("}");
+    }
+
+    /**
+     * Where {@code pom} says its parent is. A parent with no
+     * {@code <relativePath>} sits at {@code ../pom.xml}, and one with an empty
+     * {@code <relativePath/>} is not on the filesystem at all.
+     */
+    private static Path parentPath(Path pom, Element parent) {
         if (parent == null) {
             return null;
         }
@@ -72,7 +125,6 @@ final class ParentPom {
         Element declared = (Element) extractTag(parent, "relativePath");
         if (declared != null) {
             String relativePath = declared.getTextContent().trim();
-            // an empty <relativePath/> means the parent is not on the filesystem
             return relativePath.isEmpty() ? null : absolute(folder.resolve(relativePath));
         }
         return absolute(folder.resolve("../pom.xml"));
@@ -94,18 +146,34 @@ final class ParentPom {
     }
 
     private static Document parse(Path pom) {
+        Document cached = PARSED.get(pom);
+        if (cached != null) {
+            return cached;
+        }
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             DocumentBuilder builder = factory.newDocumentBuilder();
+            Document document;
             try (InputStream is = Files.newInputStream(pom)) {
-                Document document = builder.parse(is);
-                document.getDocumentElement().normalize();
-                return document;
+                document = builder.parse(is);
             }
+            document.getDocumentElement().normalize();
+            PARSED.put(pom, document);
+            return document;
         } catch (ParserConfigurationException | SAXException | IOException e) {
             return null;
         }
+    }
+
+    /**
+     * The text of a direct child of {@code element}, and null when there is none.
+     * Direct, because a pom's own {@code <groupId>} has to be told apart from the
+     * one inside its {@code <parent>}.
+     */
+    private static String text(Element element, String tagName) {
+        Node node = extractTag(element, tagName);
+        return node == null ? null : node.getTextContent();
     }
 
     private static Element firstElement(Document document, String tagName) {

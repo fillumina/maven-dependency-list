@@ -30,24 +30,23 @@ public class Pom {
     private final Map<String,String> propertyMap;
     private final Map<String,String> ownPropertyMap;
     private final Path source;
-    private final boolean resolveParents;
     private final List<String> unresolvedWarnings = new ArrayList<>();
 
     public Pom(String pom, AssociationBuilder associationBuilder, boolean noDependencies) {
-        this(pom, null, associationBuilder, noDependencies, false);
+        this(pom, null, associationBuilder, noDependencies);
     }
 
     /**
-     * Reads one pom.
+     * Reads one pom. A version written as a property is resolved against the
+     * properties of the poms above {@code source} on disk, and keeps its
+     * placeholder when it cannot be resolved.
      *
-     * @param source where the text was read from, used in warnings, may be null
-     * @param resolveParents whether a version written as a property is also looked
-     *                       for in the poms above {@code source} on disk
+     * @param source where the text was read from, used in warnings and to find the
+     *               parents, and null only when the text did not come from a file
      */
     public Pom(String pom, Path source, AssociationBuilder associationBuilder,
-            boolean noDependencies, boolean resolveParents) {
+            boolean noDependencies) {
         this.source = source;
-        this.resolveParents = resolveParents;
         // Instantiate the Factory
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
@@ -68,9 +67,9 @@ public class Pom {
             doc.getDocumentElement().normalize();
 
             ownPropertyMap = parseProperties(doc);
-            propertyMap = resolveParents && source != null
-                    ? ParentPom.inheritedProperties(source, ownPropertyMap)
-                    : ownPropertyMap;
+            propertyMap = source == null
+                    ? ownPropertyMap
+                    : ParentPom.inheritedProperties(source, ownPropertyMap);
 
             pomPackage = parsePomPackage(doc);
 
@@ -227,8 +226,9 @@ public class Pom {
             warning.append(source).append(": ");
         }
         return warning.append(dependency.getName())
-                .append(" has version ${").append(property).append("}, which is not defined in this pom.xml")
-                .append(resolveParents ? " or in any parent pom found on disk" : "")
+                .append(" has version ${").append(property)
+                .append("}, which is not defined in this pom.xml")
+                .append(source == null ? "" : " or in any parent pom found on disk")
                 .toString();
     }
 

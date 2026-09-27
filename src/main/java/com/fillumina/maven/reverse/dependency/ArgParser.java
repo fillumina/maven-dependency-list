@@ -22,13 +22,12 @@ public class ArgParser {
     private static final String NO_DEPENCENCIES = "-n";
     private static final String REVERSE = "-r";
     private static final String OMIT_NULL_VERSION = "-v";
-    private static final String RESOLVE_PARENTS = "-P";
 
     private static final String USAGE =
         "by Francesco Illuminati fillumina@gmail.com - https://github.com/fillumina/maven-dependency-list " +
             "- ver " + VERSION + " " + VERSION_DATA +"\n" +
         "List and change package versions in a directory tree of maven pom.xml with filters.\n" +
-        "options: [" + HELP_SHORT + "|" + HELP_LONG + "] [" + REVERSE + "] [" + NO_DEPENCENCIES +"] [" + RESOLVE_PARENTS + "] [" + PROJECT + " project_regexp] " +
+        "options: [" + HELP_SHORT + "|" + HELP_LONG + "] [" + REVERSE + "] [" + NO_DEPENCENCIES +"] [" + PROJECT + " project_regexp] " +
             "[" + DEPENDENCY + " dependecy_regexp] [" + CHANGE_ARTIFACT + " group:artifact:ver:new-ver] " +
             "[" + BACKUP_COPY + "] paths...\n" +
         "where:\n" +
@@ -38,8 +37,6 @@ public class ArgParser {
         PROJECT + " regexp set a project filter\n" +
         DEPENDENCY + " regexp set a dependency/plugin filter\n" +
         OMIT_NULL_VERSION + " omit dependencies/plugins with null version\n" +
-        RESOLVE_PARENTS + " read properties from the parent poms found on disk, so a version written\n" +
-        "   as a property inherited from a parent is resolved\n" +
         CHANGE_ARTIFACT + " group:artifact:ver:new-ver change version of all package occurences\n" +
         "   cannot be mixed with dependency filter (" + DEPENDENCY + "), can use project filtering (" + PROJECT + ")\n" +
         BACKUP_COPY + " make a backup copy of the changed pom.xml as pom.xml.bak (only with " + CHANGE_ARTIFACT + ")\n" +
@@ -58,7 +55,6 @@ public class ArgParser {
     private boolean makeBackupCopy;
     private boolean fullStacktrace;
     private boolean omitNullVersion;
-    private boolean resolveParents;
 
     public ArgParser(String[] args) {
         boolean project = false, dependency = false, changeArtifact = false;
@@ -100,8 +96,6 @@ public class ArgParser {
                     fullStacktrace = true;
                 } else if (OMIT_NULL_VERSION.equals(s)) {
                     omitNullVersion = true;
-                } else if (RESOLVE_PARENTS.equals(s)) {
-                    resolveParents = true;
                 } else {
                     paths.add(s);
                 }
@@ -165,10 +159,6 @@ public class ArgParser {
         return omitNullVersion;
     }
 
-    public boolean isResolveParents() {
-        return resolveParents;
-    }
-
     @Override
     public String toString() {
         return "configuration:" +
@@ -177,7 +167,6 @@ public class ArgParser {
                 (projectRegexp != null ? "\nproject regexp=" + projectRegexp : "") +
                 (dependencyRegexp != null ? "\ndependency regexp=" + dependencyRegexp : "") +
                 (omitNullVersion ? "\nomit null version=" + omitNullVersion : "") +
-                (resolveParents ? "\nresolve parents=" + resolveParents : "") +
                 (artifactToChange != null ? "\nartifact to change=" + artifactToChange : "") +
                 (newVersion != null ? "\nnew version=" + newVersion : "") +
                 (makeBackupCopy ? "\nmake backup copy=" + makeBackupCopy : "") +
