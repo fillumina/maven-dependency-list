@@ -130,7 +130,13 @@ public class App {
             System.out.println("");
             if (pomPaths.isEmpty()) {
                 System.err.println("WARNING: no pom.xml was read at all, "
-                        + "so nothing was searched and nothing below was found");
+                        + "so nothing was searched and nothing below was found.");
+                if (!arguments.isAllFolders()) {
+                    System.err.println("         A folder that only groups projects is not entered."
+                            + " If the projects are under plain folders,");
+                    System.err.println("         " + ArgParser.ALL_FOLDERS_HINT
+                            + " looks inside those too.");
+                }
             }
 
             final boolean noDependencies = arguments.isNoDependencies();

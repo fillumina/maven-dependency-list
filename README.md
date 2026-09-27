@@ -16,7 +16,7 @@ This application is geared towards directory of java projects with useful featur
 
 ## Versions
 
-- **1.3.0** 27/09/26 require JDK 21+, upgrade to JUnit 6 and current build plugins, add `-o` to report the projects behind on an artifact, add `-a` to look inside folders that group projects, say on every run how much was read, step over a folder that cannot be read instead of ending the run, order versions the way Maven does, resolve a version from a parent pom found on disk, report a version that cannot be resolved instead of guessing it, pin an inherited version in the file that declares it, document the limits, the output format and the exit codes, fix the `scm` connection
+- **1.3.0** 27/09/26 resolve `${parent.version}` and `${project.parent.version}`, require JDK 21+, upgrade to JUnit 6 and current build plugins, add `-o` to report the projects behind on an artifact, add `-a` to look inside folders that group projects, say on every run how much was read, step over a folder that cannot be read instead of ending the run, order versions the way Maven does, resolve a version from a parent pom found on disk, report a version that cannot be resolved instead of guessing it, pin an inherited version in the file that declares it, document the limits, the output format and the exit codes, fix the `scm` connection
 
 - **1.2.4** 27/09/26 fix corrupted `pom.xml` when a version change shortens the file, fix errors with `-n -v` and `-n -r`, require JDK 11+
 
@@ -82,7 +82,7 @@ Three details that are easy to trip over:
 
 Output is plain text on `stdout`: one `group:artifact:version` per line, with a project's dependencies indented by a tab. A dependency with no version prints as `group:artifact`. The format is meant to be read or piped into `grep` and `awk`.
 
-Every run prints a `configuration:` block and a `searching in:` line before the listing, so a script that wants only the data has to skip them, and one line on `stderr` at the end saying how many `pom.xml` files were read and how many entries were listed. The two numbers are usually different: a project that declares no dependencies gets no line of its own unless `-n` is used, which is why both are printed. A run that read no `pom.xml` at all says so in a `WARNING:`. Two things add a `WARNING:` line on `stderr`, which never mixes into the data on `stdout`: a version that could not be resolved, and a pom that declares the artifact `-c` was pointed at but did not change, which is how a sweep tells you which projects it did not move.
+Every run prints a `configuration:` block and a `searching in:` line before the listing, so a script that wants only the data has to skip them, and one line on `stderr` at the end saying how many `pom.xml` files were read and how many entries were listed. The two numbers are usually different: a project that declares no dependencies gets no line of its own unless `-n` is used, which is why both are printed. A run that read no `pom.xml` at all says so in a `WARNING:` and points at `-a`, since a tree whose projects are grouped under plain folders is the usual reason, and an empty listing on its own does not say so. Two things add a `WARNING:` line on `stderr`, which never mixes into the data on `stdout`: a version that could not be resolved, and a pom that declares the artifact `-c` was pointed at but did not change, which is how a sweep tells you which projects it did not move.
 
 | Situation | What is printed | Exit code |
 | --- | --- | --- |

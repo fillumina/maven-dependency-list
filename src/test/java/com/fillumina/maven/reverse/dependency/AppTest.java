@@ -179,6 +179,32 @@ public class AppTest {
     }
 
     @Test
+    public void shouldPointAtAllFoldersWhenItReadNothing() throws IOException {
+        // reading nothing is usually because the tree is grouped under plain folders,
+        // and the fix is a flag the reader cannot guess from an empty listing
+        Path noProjects = root.resolve("grouped");
+        Files.createDirectories(noProjects);
+
+        String[] captured = CommandOutput.capture(() ->
+                assertEquals(0, App.run(new String[]{noProjects.toString()})));
+
+        assertTrue(captured[1].contains("no pom.xml was read at all"), captured[1]);
+        assertTrue(captured[1].contains("-a looks inside those too"), captured[1]);
+    }
+
+    @Test
+    public void shouldNotSuggestAllFoldersWhenTheyWereAlreadyGiven() throws IOException {
+        Path noProjects = root.resolve("grouped");
+        Files.createDirectories(noProjects);
+
+        String[] captured = CommandOutput.capture(() ->
+                assertEquals(0, App.run(new String[]{"-a", noProjects.toString()})));
+
+        assertTrue(captured[1].contains("no pom.xml was read at all"), captured[1]);
+        assertFalse(captured[1].contains("-a looks inside"), captured[1]);
+    }
+
+    @Test
     public void shouldCountThePomsItChangedInChangeMode() throws IOException {
         Path pom = writePom("proj", LONG_VERSION);
 

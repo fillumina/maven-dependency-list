@@ -25,6 +25,9 @@ public class ArgParser {
     private static final String OUTDATED = "-o";
     private static final String ALL_FOLDERS = "-a";
 
+    /** What to tell someone whose run read nothing, since that is usually why. */
+    static final String ALL_FOLDERS_HINT = "-" + ALL_FOLDERS.substring(1);
+
     private static final String[] USAGE = {
         "maven-dependency-list " + VERSION + " (" + VERSION_DATA + ")",
         "Francesco Illuminati fillumina@gmail.com - https://github.com/fillumina/maven-dependency-list",

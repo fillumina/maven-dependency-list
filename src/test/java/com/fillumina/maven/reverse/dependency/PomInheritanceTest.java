@@ -125,6 +125,78 @@ public class PomInheritanceTest {
     }
 
     @Test
+    public void shouldResolveTheParentVersionAndGroupFromTheParentBlock() throws IOException {
+        // ${parent.version} and ${parent.groupId} are the coordinates of the parent
+        // this pom names, which are written in the pom itself
+        write(root.resolve("child/pom.xml"),
+                "<project>"
+                        + "<modelVersion>4.0.0</modelVersion>"
+                        + "<parent>"
+                        + "<groupId>com.acme</groupId>"
+                        + "<artifactId>root</artifactId>"
+                        + "<version>5.0</version>"
+                        + "</parent>"
+                        + "<artifactId>child</artifactId>"
+                        + "<dependencies>"
+                        + "<dependency>"
+                        + "<groupId>${parent.groupId}</groupId>"
+                        + "<artifactId>lib</artifactId>"
+                        + "<version>${parent.version}</version>"
+                        + "</dependency>"
+                        + "</dependencies>"
+                        + "</project>");
+
+        String[] output = run();
+
+        assertTrue(output[0].contains("com.acme:lib:5.0"), output[0]);
+        assertNoWarnings(output[1]);
+    }
+
+    @Test
+    public void shouldResolveTheDottedSpellingOfTheParentCoordinates() throws IOException {
+        // real poms write these both ways, and one of yours used the dotted one
+        write(root.resolve("child/pom.xml"),
+                childPom("", "${project.parent.version}", "root", null));
+        Path child = root.resolve("child/pom.xml");
+        Files.writeString(child, Files.readString(child).replace(
+                "<groupId>org.acme</groupId>",
+                "<groupId>${project.parent.groupId}</groupId>"));
+
+        String[] output = run();
+
+        assertTrue(output[0].contains("com.acme:lib:5.0"), "stdout:" + output[0]);
+        assertNoWarnings(output[1]);
+    }
+
+    @Test
+    public void shouldLeaveTheParentCoordinatesUnresolvedWithoutAParentBlock() throws IOException {
+        write(root.resolve("child/pom.xml"), childPom("", "${parent.version}", null, null));
+
+        String[] output = run();
+
+        assertTrue(output[0].contains("org.acme:lib:${parent.version}"), "stdout:" + output[0]);
+        assertTrue(output[1].contains("has version ${parent.version}, which is not defined"),
+                "stderr:" + output[1]);
+    }
+
+    @Test
+    public void shouldPinAVersionWrittenAsAParentCoordinate() throws IOException {
+        // the coordinate is not a property this file declares, so a rewrite pins it
+        // here rather than pretending it may change ${parent.version}
+        write(root.resolve("child/pom.xml"), childPom("", "${parent.version}", "root", null));
+        String before = Files.readString(root.resolve("child/pom.xml"));
+
+        String[] output = CommandOutput.capture(() -> assertEquals(0, App.run(new String[]{
+                "-c", "org.acme:lib:5.0:6.0", root.toString()})));
+
+        String child = Files.readString(root.resolve("child/pom.xml"));
+        assertFalse(child.equals(before), child);
+        assertTrue(child.contains("<version>6.0</version>"), child);
+        assertFalse(child.contains("${parent.version}"), child);
+        assertTrue(output[0].contains("modified artifact"), "stdout:" + output[0]);
+    }
+
+    @Test
     public void shouldShowADependencyItCannotCompareUnderTheOutdatedFilter() throws IOException {
         // nothing to compare against, so it is shown rather than silently dropped
         writeChild("", PROPERTY_VERSION, "root", null);

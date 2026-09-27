@@ -72,6 +72,7 @@ public class Pom {
                     : ParentPom.inheritedProperties(source, ownPropertyMap);
 
             pomPackage = parsePomPackage(doc);
+            seedParentCoordinates(doc);
 
             if (noDependencies) {
                 associationBuilder.add(pomPackage, null);
@@ -85,6 +86,36 @@ public class Pom {
             throw new RuntimeException(e);
         }
 
+    }
+
+    /**
+     * Puts the parent pom's own groupId and version in the properties this pom can
+     * be read with, under both the short spelling `${parent.version}` and the dotted
+     * one `${project.parent.version}`, which real poms use for both. They are not
+     * properties the file declares, so they go in the visible map only and a rewrite
+     * never mistakes one for something it may edit here. A parent block whose own
+     * version is a property contributes nothing, because resolving that would need the
+     * map this is being added to.
+     */
+    private void seedParentCoordinates(Document doc) throws DOMException {
+        NodeList parents = doc.getDocumentElement().getElementsByTagName("parent");
+        if (parents.getLength() != 1) {
+            return;
+        }
+        Element parent = (Element) parents.item(0);
+        seed("groupId", extractTagText(parent, "groupId"));
+        seed("version", extractTagText(parent, "version"));
+    }
+
+    private void seed(String name, String value) {
+        if (isLiteral(value)) {
+            propertyMap.put("parent." + name, value);
+            propertyMap.put("project.parent." + name, value);
+        }
+    }
+
+    private static boolean isLiteral(String value) {
+        return value != null && !value.isBlank() && !value.trim().startsWith("${");
     }
 
     private PackageId parsePomPackage(Document doc) throws DOMException {
@@ -194,6 +225,12 @@ public class Pom {
                 }
             } else if (groupId.trim().equals("${project.groupId}")) {
                 groupId = pomPackage.getGroupId();
+            } else if (groupId.trim().startsWith("${")) {
+                final String name = groupId.trim().substring(2, groupId.trim().length() - 1);
+                final String resolved = versionMap.get(name);
+                if (resolved != null) {
+                    groupId = resolved;
+                }
             }
             if (version == null || version.trim().equals("${project.version}")) {
                 version = pomPackage.getVersion();
