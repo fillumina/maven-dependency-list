@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -22,10 +23,12 @@ public class PomTreeExtractor implements FileVisitor<Path> {
     /**
      * Folders that are never a project and are only walked into when the caller
      * asked for every folder, so that a build output directory does not turn a
-     * report into a crawl. They are only ever skipped in that mode, because in
-     * the other they are left out by the rule below anyway.
+     * report into a crawl. A pom.xml under src is a resource someone ships, not a
+     * project, which is what the first version of `-a` found in a real tree. They
+     * are only ever skipped in that mode, because in the other they are left out by
+     * the rule below anyway.
      */
-    private static final Set<String> NEVER_A_PROJECT = Set.of("target", ".git");
+    private static final Set<String> NEVER_A_PROJECT = Set.of("target", ".git", "src");
 
     public static List<Path> readAllPomsInTree(Path path, boolean allFolders) throws IOException {
         PomTreeExtractor visitor = new PomTreeExtractor(allFolders);
@@ -71,8 +74,17 @@ public class PomTreeExtractor implements FileVisitor<Path> {
     }
 
     @Override
-    public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-        throw new IOException("cannot read " + file, exc);
+    public FileVisitResult visitFileFailed(Path file, IOException exc) {
+        if (firstDir) {
+            // the folder that was named cannot be read at all, which is worth
+            // failing on: a mistyped path and a tree with nothing to report would
+            // otherwise look the same
+            throw new UncheckedIOException("cannot read " + file, exc);
+        }
+        // a folder met on the way is one this run can do without: say so and carry
+        // on, rather than losing a whole survey to one directory nobody can read
+        System.err.println("WARNING: skipped " + file + ", it cannot be read");
+        return FileVisitResult.CONTINUE;
     }
 
     @Override

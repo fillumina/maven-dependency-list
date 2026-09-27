@@ -54,8 +54,9 @@ public class ArgParser {
         "        .*$, so an anchor of your own will not match anything",
         "  " + OMIT_NULL_VERSION + "  leave out the dependencies and plugins with no version",
         "  " + ALL_FOLDERS + " also look inside folders that have no pom.xml of their own, for a",
-        "        tree whose projects are grouped under plain folders. A target or .git",
-        "        folder is still left alone",
+        "        tree whose projects are grouped under plain folders. A target, .git or",
+        "        src folder is still left alone, and a folder that cannot be read is",
+        "        reported and stepped over rather than ending the run",
         "",
         "what it changes",
         "  " + CHANGE_ARTIFACT + " group:artifact:ver:new",
@@ -75,8 +76,9 @@ public class ArgParser {
         "what comes out",
         "  Plain text on stdout, one group:artifact:version per line, the dependencies",
         "  of a project indented under it. A version that could not be resolved, a",
-        "  pom.xml that could not be read, and a pom.xml that declares the artifact " + CHANGE_ARTIFACT,
-        "  was pointed at but did not change, all say so on stderr.",
+        "  pom.xml that could not be read, a folder that had to be stepped over, and a",
+        "  pom.xml that declares the artifact " + CHANGE_ARTIFACT + " was pointed at but did not",
+        "  change, all say so on stderr.",
         "  Exit code 0 when it ran, 1 when it did not.",
     };
 

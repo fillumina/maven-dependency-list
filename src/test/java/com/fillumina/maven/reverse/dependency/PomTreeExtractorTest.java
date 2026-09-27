@@ -1,8 +1,10 @@
 package com.fillumina.maven.reverse.dependency;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -83,6 +85,42 @@ public class PomTreeExtractorTest {
         List<Path> found = PomTreeExtractor.readAllPomsInTree(root, true).stream().sorted().toList();
 
         assertEquals(List.of(root.resolve("pom.xml"), root.resolve("tools/codegen/pom.xml")), found);
+    }
+
+    @Test
+    public void shouldFailWhenTheFolderItWasGivenCannotBeRead() {
+        // on unix the permissions of a temporary folder say nothing useful, so this
+        // is the closest a test can get: a folder that is not there at all
+        assertThrows(UncheckedIOException.class,
+                () -> PomTreeExtractor.readAllPomsInTree(root.resolve("absent"), false));
+    }
+
+    @Test
+    public void shouldCarryOnPastAFolderItCannotReadOnTheWay() throws IOException {
+        // a folder the walk runs into that cannot be read is reported and stepped
+        // over, because losing a whole survey to one of them helps nobody
+        writePom(root.resolve("a/pom.xml"));
+        Path unreadable = root.resolve("locked");
+        Files.createDirectories(unreadable);
+        writePom(unreadable.resolve("pom.xml"));
+        unreadable.toFile().setReadable(false);
+        try {
+            List<Path> found = PomTreeExtractor.readAllPomsInTree(root, true).stream().sorted().toList();
+
+            assertTrue(found.contains(root.resolve("a/pom.xml")), found.toString());
+        } finally {
+            unreadable.toFile().setReadable(true);
+        }
+    }
+
+    @Test
+    public void shouldNotReadAPomThatShipsAsAResource() throws IOException {
+        writePom(root.resolve("pom.xml"));
+        writePom(root.resolve("generator/src/main/resources/pom.xml"));
+        writePom(root.resolve("a/pom.xml"));
+
+        assertEquals(List.of(root.resolve("a/pom.xml"), root.resolve("pom.xml")),
+                PomTreeExtractor.readAllPomsInTree(root, true).stream().sorted().toList());
     }
 
     @Test
