@@ -92,6 +92,12 @@ public class ArgParser {
         "  pom.xml that declares the artifact " + CHANGE_ARTIFACT + " was pointed at but did not",
         "  change, all say so on stderr.",
         "  Exit code 0 when it ran, 1 when it did not.",
+        "",
+        "  A run that changes poms says which file it changed with",
+        "  \"modified artifact in <path>\", and one where it moved the old pom aside first with",
+        "  \"backup <from> -> <to>\". A project that a filter left out is named with",
+        "  \"skipping <project> ...\", so a filter that matched nothing is visible rather than",
+        "  silent. All three go to stdout, mixed in with the listing.",
     };
 
     private boolean help;

@@ -17,11 +17,21 @@ public class ArgParserTest {
 
     @Test
     public void shouldExplainEveryOptionItAccepts() {
-        for (String option : new String[]{"-h", "--help", "-r", "-n", "-o", "-a", "-p", "-d", "-v", "-c", "-b", "-j"}) {
+        for (String option : new String[]{"-h", "--help", "-r", "-n", "-o", "-a", "-m", "-p", "-d", "-v",
+                "-c", "-b", "-j"}) {
             assertTrue(usage().contains(option), option + " is not explained in the help");
         }
         assertTrue(usage().contains("group:artifact:ver:new"), usage());
         assertTrue(usage().contains("group:artifact:ver"), usage());
+    }
+
+    @Test
+    public void shouldSayWhatARunThatChangesPomsPrints() {
+        String usage = usage();
+
+        assertTrue(usage.contains("modified artifact in"), usage);
+        assertTrue(usage.contains("skipping"), usage);
+        assertTrue(usage.contains("backup"), usage);
     }
 
     @Test
