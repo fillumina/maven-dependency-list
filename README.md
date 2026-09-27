@@ -8,13 +8,15 @@ The Java project can be built with the usual `mvn clean install` given the prese
 
 Use the script  `run-script-creator.sh` (derived from this [gist](https://gist.github.com/briandealwis/782862/9cc9ef8a78af3bb78a692313f8bfa6fb76ab4663)) to create a `java` command line application embedded into a shell script (`run-maven-dependency-list.sh`). It needs a compatible JRE 11 available in the system.
 
-If you don't have access to a `bash` shell you can use the application by calling it directly with: `java -jar maven-dependency-list-1.2.jar`  where the `jar` file is created in the `target` folder after compilation (`mvn clean install`).
+If you don't have access to a `bash` shell you can use the application by calling it directly with: `java -jar maven-dependency-list-1.2.4.jar`  where the `jar` file is created in the `target` folder after compilation (`mvn clean install`).
 
 ## Tree Visualization
 
 This application is geared towards directory of java projects with useful features such as reverse searching (showing dependent projects for each dependency). To analyze a single project and view the full dependency tree use [Maven Dependency Tree Plugin](https://maven.apache.org/plugins/maven-dependency-plugin/tree-mojo.html).
 
 ## Versions
+
+- **1.2.4** 27/09/26 fix corrupted `pom.xml` when a version change shortens the file, fix errors with `-n -v` and `-n -r`, require JDK 11+
 
 - **1.2.3** 21/11/23 fix implicit `org.apache.maven.plugins` as `groupId`  for plugins
 

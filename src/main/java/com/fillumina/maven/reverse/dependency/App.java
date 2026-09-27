@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  */
 public class App {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         ArgParser arguments = new ArgParser(args);
         try {
             execution(arguments);

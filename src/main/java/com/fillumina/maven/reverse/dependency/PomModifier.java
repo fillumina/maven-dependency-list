@@ -1,6 +1,5 @@
 package com.fillumina.maven.reverse.dependency;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +22,7 @@ public class PomModifier {
     }
 
     public StringBuffer modify(String pom, Map<String, String> propertyMap,
-            PackageId packageId, String newVersion) throws IOException {
+            PackageId packageId, String newVersion) {
         StringBuffer pomBuffer = new StringBuffer(pom);
         return modifyBuffer(pomBuffer, propertyMap, packageId, newVersion);
     }

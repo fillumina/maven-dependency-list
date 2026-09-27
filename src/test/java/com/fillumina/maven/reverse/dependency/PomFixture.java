@@ -1,8 +1,10 @@
 package com.fillumina.maven.reverse.dependency;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -68,10 +70,12 @@ public class PomFixture {
 
     private static String readTestPom() {
         InputStream is = PomFixture.class.getClassLoader().getResourceAsStream("test-pom.xml");
-        String text = new BufferedReader(
-                new InputStreamReader(is, StandardCharsets.UTF_8))
-                .lines()
-                .collect(Collectors.joining("\n"));
-        return text;
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(is, StandardCharsets.UTF_8))) {
+            return reader.lines()
+                    .collect(Collectors.joining("\n"));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }
