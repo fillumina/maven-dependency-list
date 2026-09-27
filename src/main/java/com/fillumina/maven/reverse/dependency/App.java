@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -45,6 +46,34 @@ public class App {
      */
     private static boolean declares(String pomContent, PackageId artifact) {
         return pomContent.contains("<artifactId>" + artifact.getArtifactId() + "</artifactId>");
+    }
+
+    /**
+     * Drops everything that is not the wanted artifact, and every project left
+     * with nothing, so that a report is only about what is behind. In the reverse
+     * view the dependency is the association and the projects are what hangs off
+     * it, so there the whole entry goes or stays.
+     */
+    private static void keepOnlyOutdated(Map<String, Association> associations, PackageId wanted,
+            boolean reverse) {
+        if (reverse) {
+            associations.values().removeIf(association -> !isBehind(association.getProject(), wanted));
+            return;
+        }
+        associations.values().forEach(association ->
+                association.getSet().removeIf(dependency -> !isBehind(dependency, wanted)));
+        associations.values().removeIf(association -> association.getSet().isEmpty());
+    }
+
+    private static boolean isBehind(PackageId dependency, PackageId wanted) {
+        if (!dependency.getName().equals(wanted.getName())) {
+            return false;
+        }
+        if (dependency.getVersion() == null || wanted.getVersion() == null) {
+            // nothing to compare, so the dependency is shown rather than hidden
+            return true;
+        }
+        return VersionComparator.compare(dependency.getVersion(), wanted.getVersion()) < 0;
     }
 
     static void execution(ArgParser arguments) throws IOException {
@@ -122,6 +151,10 @@ public class App {
             }
 
             if (!changeArtifactMode) {
+                final PackageId outdated = arguments.getOutdatedArtifact();
+                if (outdated != null) {
+                    keepOnlyOutdated(associationBuilder.getMap(), outdated, arguments.isReverse());
+                }
                 if (noDependencies) {
                     associationBuilder.getMap().values().stream().forEach(System.out::print);
                 } else {

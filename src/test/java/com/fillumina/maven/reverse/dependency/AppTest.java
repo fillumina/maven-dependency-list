@@ -87,6 +87,60 @@ public class AppTest {
     }
 
     @Test
+    public void shouldKeepOnlyTheProjectsBehindTheGivenVersion() throws IOException {
+        writeService("old-service", "4.13.2");
+        writeService("current-service", "5.9.0");
+
+        String output = CommandOutput.capture(() -> App.run(new String[]{"-o", "junit:junit:5.6.0", root.toString()}))[0];
+
+        assertTrue(output.contains("com.acme:old-service"), output);
+        assertFalse(output.contains("com.acme:current-service"), output);
+    }
+
+    @Test
+    public void shouldListNothingWhenEveryProjectIsUpToDate() throws IOException {
+        writeService("a", "5.9.0");
+        writeService("b", "5.9.1");
+
+        String output = CommandOutput.capture(() -> App.run(new String[]{"-o", "junit:junit:5.6.0", root.toString()}))[0];
+
+        assertFalse(output.contains("com.acme:a"), output);
+        assertFalse(output.contains("com.acme:b"), output);
+    }
+
+    @Test
+    public void shouldListNothingForAnotherArtifact() throws IOException {
+        writeService("a", "4.13.2");
+
+        String output = CommandOutput.capture(() -> App.run(new String[]{"-o", "org.other:lib:9.9", root.toString()}))[0];
+
+        assertFalse(output.contains("com.acme:a"), output);
+    }
+
+    @Test
+    public void shouldCountAnEqualVersionAsUpToDate() throws IOException {
+        writeService("a", "5.6.0");
+
+        String output = CommandOutput.capture(() -> App.run(new String[]{"-o", "junit:junit:5.6.0", root.toString()}))[0];
+
+        assertFalse(output.contains("com.acme:a"), output);
+    }
+
+    @Test
+    public void shouldKeepOnlyTheOlderVersionInTheReverseView() throws IOException {
+        writeService("old-service", "4.13.2");
+        writeService("current-service", "5.9.0");
+
+        String output = CommandOutput.capture(() -> App.run(
+                new String[]{"-r", "-o", "junit:junit:5.6.0", root.toString()}))[0];
+
+        assertTrue(output.contains("junit:junit:4.13.2"), output);
+        assertFalse(output.contains("junit:junit:5.9.0"), output);
+        assertTrue(output.contains("com.acme:old-service"), output);
+        assertFalse(output.contains("com.acme:current-service"), output);
+    }
+
+    @Test
     public void shouldExitZeroOnSuccess() {
         writePomUnchecked("proj", LONG_VERSION);
 
@@ -136,6 +190,25 @@ public class AppTest {
 
     private String[] change(String oldVersion, String newVersion) {
         return new String[]{"-c", "junit:junit:" + oldVersion + ":" + newVersion, root.toString()};
+    }
+
+    private void writeService(String name, String junitVersion) throws IOException {
+        Path folder = root.resolve(name);
+        Files.createDirectories(folder);
+        Files.writeString(folder.resolve("pom.xml"),
+                "<project>"
+                        + "<modelVersion>4.0.0</modelVersion>"
+                        + "<groupId>com.acme</groupId>"
+                        + "<artifactId>" + name + "</artifactId>"
+                        + "<version>1.0</version>"
+                        + "<dependencies>"
+                        + "<dependency>"
+                        + "<groupId>junit</groupId>"
+                        + "<artifactId>junit</artifactId>"
+                        + "<version>" + junitVersion + "</version>"
+                        + "</dependency>"
+                        + "</dependencies>"
+                        + "</project>");
     }
 
     private Path writePom(String folder, String version) throws IOException {

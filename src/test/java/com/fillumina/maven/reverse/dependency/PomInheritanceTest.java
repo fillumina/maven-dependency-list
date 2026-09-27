@@ -125,6 +125,18 @@ public class PomInheritanceTest {
     }
 
     @Test
+    public void shouldShowADependencyItCannotCompareUnderTheOutdatedFilter() throws IOException {
+        // nothing to compare against, so it is shown rather than silently dropped
+        writeChild("", PROPERTY_VERSION, "root", null);
+
+        String output = CommandOutput.capture(() -> assertEquals(0, App.run(new String[]{
+                "-o", "org.acme:lib:9.9", root.toString()})))[0];
+
+        assertTrue(output.contains("com.acme:child"), output);
+        assertTrue(output.contains(PROPERTY_VERSION), output);
+    }
+
+    @Test
     public void shouldPinAnInheritedVersionInTheChild() throws IOException {
         writeParent(properties("lib.version", "3.1"), "root", "");
         writeChild("", PROPERTY_VERSION, "root", null);

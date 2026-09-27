@@ -22,13 +22,14 @@ public class ArgParser {
     private static final String NO_DEPENCENCIES = "-n";
     private static final String REVERSE = "-r";
     private static final String OMIT_NULL_VERSION = "-v";
+    private static final String OUTDATED = "-o";
 
     private static final String USAGE =
         "by Francesco Illuminati fillumina@gmail.com - https://github.com/fillumina/maven-dependency-list " +
             "- ver " + VERSION + " " + VERSION_DATA +"\n" +
         "List and change package versions in a directory tree of maven pom.xml with filters.\n" +
         "options: [" + HELP_SHORT + "|" + HELP_LONG + "] [" + REVERSE + "] [" + NO_DEPENCENCIES +"] [" + PROJECT + " project_regexp] " +
-            "[" + DEPENDENCY + " dependecy_regexp] [" + CHANGE_ARTIFACT + " group:artifact:ver:new-ver] " +
+            "[" + DEPENDENCY + " dependecy_regexp] [" + CHANGE_ARTIFACT + " group:artifact:ver:new-ver] [" + OUTDATED + " group:artifact:ver] " +
             "[" + BACKUP_COPY + "] paths...\n" +
         "where:\n" +
         HELP_SHORT + " or " + HELP_LONG + " print this help\n" +
@@ -38,6 +39,8 @@ public class ArgParser {
         DEPENDENCY + " regexp set a dependency/plugin filter\n" +
         OMIT_NULL_VERSION + " omit dependencies/plugins with null version\n" +
         CHANGE_ARTIFACT + " group:artifact:ver:new-ver change version of all package occurences\n" +
+        OUTDATED + " group:artifact:ver keep only the projects still on an older version of that\n" +
+        "   artifact, and cannot be mixed with " + CHANGE_ARTIFACT + "\n" +
         "   cannot be mixed with dependency filter (" + DEPENDENCY + "), can use project filtering (" + PROJECT + ")\n" +
         BACKUP_COPY + " make a backup copy of the changed pom.xml as pom.xml.bak (only with " + CHANGE_ARTIFACT + ")\n" +
         FULL_STACKTRACE + " print a full java exception stacktrace\n" +
@@ -55,9 +58,10 @@ public class ArgParser {
     private boolean makeBackupCopy;
     private boolean fullStacktrace;
     private boolean omitNullVersion;
+    private PackageId outdatedArtifact;
 
     public ArgParser(String[] args) {
-        boolean project = false, dependency = false, changeArtifact = false;
+        boolean project = false, dependency = false, changeArtifact = false, outdated = false;
         if (args == null || args.length == 0) {
             error = true;
         } else {
@@ -80,6 +84,14 @@ public class ArgParser {
                                 "expected 4 fields separated by ':', was= '" + s + "'");
                     }
                     changeArtifact = false;
+                } else if (outdated) {
+                    String[] fields = s.split(":");
+                    if (fields.length != 3) {
+                        throw new IllegalArgumentException(
+                                "expected 3 fields separated by ':', was= '" + s + "'");
+                    }
+                    outdatedArtifact = new PackageId(fields[0], fields[1], fields[2]);
+                    outdated = false;
                 } else if (REVERSE.equals(s)) {
                     reverse = true;
                 } else if (NO_DEPENCENCIES.equals(s)) {
@@ -96,6 +108,8 @@ public class ArgParser {
                     fullStacktrace = true;
                 } else if (OMIT_NULL_VERSION.equals(s)) {
                     omitNullVersion = true;
+                } else if (OUTDATED.equals(s)) {
+                    outdated = true;
                 } else {
                     paths.add(s);
                 }
@@ -104,6 +118,10 @@ public class ArgParser {
         if (artifactToChange != null && dependencyRegexp != null) {
             throw new IllegalArgumentException(
                     "change artifact (-c) cannot be mixed with dependency filter (-d)");
+        }
+        if (artifactToChange != null && outdatedArtifact != null) {
+            throw new IllegalArgumentException(
+                    "change artifact (-c) cannot be mixed with outdated artifact (-o)");
         }
     }
 
@@ -159,6 +177,13 @@ public class ArgParser {
         return omitNullVersion;
     }
 
+    /**
+     * The artifact to report on, or null when every dependency should be shown.
+     */
+    public PackageId getOutdatedArtifact() {
+        return outdatedArtifact;
+    }
+
     @Override
     public String toString() {
         return "configuration:" +
@@ -167,6 +192,7 @@ public class ArgParser {
                 (projectRegexp != null ? "\nproject regexp=" + projectRegexp : "") +
                 (dependencyRegexp != null ? "\ndependency regexp=" + dependencyRegexp : "") +
                 (omitNullVersion ? "\nomit null version=" + omitNullVersion : "") +
+                (outdatedArtifact != null ? "\noutdated artifact=" + outdatedArtifact : "") +
                 (artifactToChange != null ? "\nartifact to change=" + artifactToChange : "") +
                 (newVersion != null ? "\nnew version=" + newVersion : "") +
                 (makeBackupCopy ? "\nmake backup copy=" + makeBackupCopy : "") +

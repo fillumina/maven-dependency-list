@@ -77,6 +77,30 @@ public class ArgParserTest {
     }
 
     @Test
+    public void shouldSplitTheOutdatedArtifactInThreeFields() {
+        ArgParser arguments = new ArgParser(new String[]{"-o", "org.acme:lib:5.6.0", "."});
+
+        assertEquals(new PackageId("org.acme", "lib", "5.6.0"), arguments.getOutdatedArtifact());
+    }
+
+    @Test
+    public void shouldRejectAnOutdatedArtifactWithoutThreeFields() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new ArgParser(new String[]{"-o", "org.acme:lib", "."}));
+    }
+
+    @Test
+    public void shouldRejectAnArtifactToChangeMixedWithTheOutdatedFilter() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new ArgParser(new String[]{"-c", "g:a:1.0:2.0", "-o", "g:a:2.0", "."}));
+    }
+
+    @Test
+    public void shouldLeaveTheOutdatedArtifactNullWhenNotGiven() {
+        assertNull(new ArgParser(new String[]{"."}).getOutdatedArtifact());
+    }
+
+    @Test
     public void shouldSetEveryFlag() {
         ArgParser arguments = new ArgParser(new String[]{"-r", "-n", "-b", "-j", "-v", "."});
 
