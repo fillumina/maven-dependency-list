@@ -180,6 +180,91 @@ public class PomInheritanceTest {
     }
 
     @Test
+    public void shouldReadTheParentFromALocalRepository() throws IOException {
+        // an empty <relativePath/> asks for the parent out of the repository, which
+        // is where spring-boot-starter-parent and most published parents live
+        writeRepositoryPom("org.springframework.boot", "spring-boot-starter-parent", "3.0.1",
+                properties("hibernate.version", "6.1.5"));
+        writeRepositoryChild("org.springframework.boot", "spring-boot-starter-parent", "3.0.1", "",
+                "org.hibernate.orm.tooling", "hibernate-enhance-maven-plugin", "${hibernate.version}");
+
+        String output = runOrFail("-m", repository().toString(), root.toString())[0];
+
+        assertTrue(output.contains("org.hibernate.orm.tooling:hibernate-enhance-maven-plugin:6.1.5"),
+                output);
+    }
+
+    @Test
+    public void shouldReadAParentChainOutOfTheRepository() throws IOException {
+        writeRepositoryPom("com.acme", "base", "1.0", properties("lib.version", "3.1"));
+        writeRepositoryPom("com.acme", "middle", "2.0",
+                "<parent><groupId>com.acme</groupId><artifactId>base</artifactId>"
+                        + "<version>1.0</version></parent>"
+                        + "<groupId>com.acme</groupId><artifactId>middle</artifactId><version>2.0</version>");
+        writeRepositoryChild("com.acme", "middle", "2.0", "",
+                "org.acme", "lib", "${lib.version}");
+
+        String output = runOrFail("-m", repository().toString(), root.toString())[0];
+
+        assertTrue(output.contains("org.acme:lib:3.1"), output);
+    }
+
+    @Test
+    public void shouldPreferTheParentOnDiskOverTheOneInTheRepository() throws IOException {
+        writeRepositoryPom("com.acme", "root", "5.0", properties("lib.version", "9.9"));
+        writeParent(properties("lib.version", "3.1"), "root", "");
+        writeChild("", PROPERTY_VERSION, "root", null);
+
+        String output = runOrFail("-m", repository().toString(), root.toString())[0];
+
+        assertTrue(output.contains("org.acme:lib:3.1"), output);
+    }
+
+    @Test
+    public void shouldSaySoWhenTheParentIsInNeitherPlace() throws IOException {
+        Files.createDirectories(repository());
+        writeRepositoryChild("com.acme", "absent-parent", "5.0", "",
+                "org.acme", "lib", "${hibernate.version}");
+
+        String[] output = runOrFail("-m", repository().toString(), root.toString());
+
+        assertTrue(output[0].contains("org.acme:lib:${hibernate.version}"), output[0]);
+        assertTrue(output[1].contains("has version ${hibernate.version}, which is not defined"),
+                output[1]);
+        assertTrue(output[1].contains("or in the repository named"), output[1]);
+    }
+
+    @Test
+    public void shouldNotLookInARepositoryUnlessItIsNamed() throws IOException {
+        writeRepositoryPom("com.acme", "root", "5.0", properties("lib.version", "9.9"));
+        writeChild("", PROPERTY_VERSION, "root", "");
+
+        String[] output = run();
+
+        assertTrue(output[0].contains("org.acme:lib:" + PROPERTY_VERSION), output[0]);
+    }
+
+    private Path repository() {
+        return root.resolve("repository");
+    }
+
+    /**
+     * Writes a pom where a maven repository keeps one: the group with its dots turned
+     * into folders, then the artifact, then the version.
+     */
+    private void writeRepositoryPom(String groupId, String artifactId, String version, String body)
+            throws IOException {
+        Path pom = repository().resolve(groupId.replace('.', '/'))
+                .resolve(artifactId).resolve(version)
+                .resolve(artifactId + "-" + version + ".pom");
+        Files.createDirectories(pom.getParent());
+        Files.writeString(pom, "<project>"
+                + "<modelVersion>4.0.0</modelVersion>"
+                + body
+                + "</project>");
+    }
+
+    @Test
     public void shouldPinAVersionWrittenAsAParentCoordinate() throws IOException {
         // the coordinate is not a property this file declares, so a rewrite pins it
         // here rather than pretending it may change ${parent.version}
@@ -308,9 +393,41 @@ public class PomInheritanceTest {
         assertTrue(output[1].contains(warning), "stderr:" + output[1]);
     }
 
+    /**
+     * Runs the tool and returns what it printed, failing with what it said on
+     * stderr when it did not exit cleanly.
+     */
+    private static String[] runOrFail(String... args) throws IOException {
+        int[] status = {0};
+        String[] captured = CommandOutput.capture(() -> status[0] = App.run(args));
+        assertEquals(0, status[0], "stderr:" + captured[1]);
+        return captured;
+    }
+
     private String[] run() throws IOException {
         return CommandOutput.capture(() -> assertEquals(0, App.run(new String[]{root.toString()}),
                 "the run should succeed"));
+    }
+
+    /**
+     * A child whose parent is named by its own coordinates, which is what a lookup in
+     * a repository has to go by, with one dependency on a property version.
+     */
+    private void writeRepositoryChild(String parentGroupId, String parentArtifactId, String parentVersion,
+            String relativePath, String groupId, String artifactId, String version) throws IOException {
+        String declared = relativePath == null ? "" : "<relativePath>" + relativePath + "</relativePath>";
+        write(root.resolve("child/pom.xml"),
+                "<project>"
+                        + "<modelVersion>4.0.0</modelVersion>"
+                        + "<parent><groupId>" + parentGroupId + "</groupId>"
+                        + "<artifactId>" + parentArtifactId + "</artifactId>"
+                        + "<version>" + parentVersion + "</version>" + declared + "</parent>"
+                        + "<artifactId>child</artifactId>"
+                        + "<dependencies><dependency>"
+                        + "<groupId>" + groupId + "</groupId>"
+                        + "<artifactId>" + artifactId + "</artifactId>"
+                        + "<version>" + version + "</version>"
+                        + "</dependency></dependencies></project>");
     }
 
     private void writeChild(String properties, String dependencyVersion, String parent, String relativePath)

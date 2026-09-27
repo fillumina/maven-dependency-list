@@ -140,6 +140,7 @@ public class App {
             }
 
             final boolean noDependencies = arguments.isNoDependencies();
+            final Path repository = arguments.getRepository();
             final PackageId artifactToChange = arguments.getArtifactToChange();
             final String newVersion = arguments.getNewVersion();
             final boolean changeArtifactMode = artifactToChange != null && newVersion != null;
@@ -148,7 +149,8 @@ public class App {
             for (Path pomPath : pomPaths) {
                 String pomContent = Files.readString(pomPath);
                 if (changeArtifactMode) {
-                    Pom pom = new Pom(pomContent, pomPath, associationBuilder, true);
+                    Pom pom = new Pom(pomContent, pomPath, repository,
+                            associationBuilder, true);
                     if (moduleRegexp != null) {
                         PackageId pkg = pom.getPomPackage();
                         String pkgName = pkg.toString();
@@ -178,7 +180,7 @@ public class App {
                         System.out.println("modified artifact in " + pomPath.toString());
                     }
                 } else {
-                    new Pom(pomContent, pomPath, associationBuilder, noDependencies);
+                    new Pom(pomContent, pomPath, repository, associationBuilder, noDependencies);
                 }
             }
 

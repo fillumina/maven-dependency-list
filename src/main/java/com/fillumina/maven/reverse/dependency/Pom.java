@@ -30,10 +30,11 @@ public class Pom {
     private final Map<String,String> propertyMap;
     private final Map<String,String> ownPropertyMap;
     private final Path source;
+    private final Path repository;
     private final List<String> unresolvedWarnings = new ArrayList<>();
 
     public Pom(String pom, AssociationBuilder associationBuilder, boolean noDependencies) {
-        this(pom, null, associationBuilder, noDependencies);
+        this(pom, null, null, associationBuilder, noDependencies);
     }
 
     /**
@@ -46,7 +47,19 @@ public class Pom {
      */
     public Pom(String pom, Path source, AssociationBuilder associationBuilder,
             boolean noDependencies) {
+        this(pom, source, null, associationBuilder, noDependencies);
+    }
+
+    /**
+     * Reads one pom.
+     *
+     * @param repository a local maven repository to look in for a parent that is not
+     *                   on disk, and null to look nowhere but the disk
+     */
+    public Pom(String pom, Path source, Path repository, AssociationBuilder associationBuilder,
+            boolean noDependencies) {
         this.source = source;
+        this.repository = repository;
         // Instantiate the Factory
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
@@ -69,7 +82,7 @@ public class Pom {
             ownPropertyMap = parseProperties(doc);
             propertyMap = source == null
                     ? ownPropertyMap
-                    : ParentPom.inheritedProperties(source, ownPropertyMap);
+                    : ParentPom.inheritedProperties(source, ownPropertyMap, repository);
 
             pomPackage = parsePomPackage(doc);
             seedParentCoordinates(doc);
@@ -266,6 +279,7 @@ public class Pom {
                 .append(" has version ${").append(property)
                 .append("}, which is not defined in this pom.xml")
                 .append(source == null ? "" : " or in any parent pom found on disk")
+                .append(repository == null ? "" : " or in the repository named")
                 .toString();
     }
 

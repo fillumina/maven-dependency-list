@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Covers the accepted command line, the regexps it builds and the two combinations it rejects.
@@ -116,6 +118,26 @@ public class ArgParserTest {
     public void shouldRejectAnArtifactToChangeMixedWithTheOutdatedFilter() {
         assertThrows(IllegalArgumentException.class,
                 () -> new ArgParser(new String[]{"-c", "g:a:1.0:2.0", "-o", "g:a:2.0", "."}));
+    }
+
+    @Test
+    public void shouldRejectARepositoryThatIsNotThere(@TempDir Path root) {
+        // a mistyped repository would leave every parent unresolved without saying
+        // why, so it is refused at the command line instead
+        assertThrows(IllegalArgumentException.class,
+                () -> new ArgParser(new String[]{"-m", root.resolve("absent").toString(), "."}));
+    }
+
+    @Test
+    public void shouldTakeTheRepositoryItIsGiven(@TempDir Path root) {
+        ArgParser arguments = new ArgParser(new String[]{"-m", root.toString(), "."});
+
+        assertEquals(root, arguments.getRepository());
+    }
+
+    @Test
+    public void shouldLookInNoRepositoryUnlessOneIsGiven() {
+        assertNull(new ArgParser(new String[]{"."}).getRepository());
     }
 
     @Test

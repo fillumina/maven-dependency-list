@@ -1,5 +1,6 @@
 package com.fillumina.maven.reverse.dependency;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -46,14 +47,17 @@ final class ParentPom {
     /**
      * Returns the properties visible from {@code pom}: the ones it declares
      * itself, which win, over the ones declared by each ancestor reached through
-     * {@code <relativePath>}. A parent that is not on disk, or that turns out not
-     * to be the one the pom declares, contributes nothing and the caller is left
-     * to say so.
+     * {@code <relativePath>}, and over those of the parent it declares when that
+     * parent is not on disk and a {@code repository} was given to look in. A parent
+     * that is neither on disk nor in the repository contributes nothing and the
+     * caller is left to say so.
      */
-    static Map<String, String> inheritedProperties(Path pom, Map<String, String> ownProperties) {
+    static Map<String, String> inheritedProperties(Path pom, Map<String, String> ownProperties,
+            Path repository) {
         Map<String, String> inherited = new HashMap<>();
         Set<Path> visited = new HashSet<>();
         Element declaredParent = null;
+        boolean parentOnDisk = false;
         Path current = absolute(pom);
         for (int depth = 0; current != null && depth < MAX_DEPTH; depth++) {
             if (!visited.add(current) || !Files.isReadable(current)) {
@@ -63,17 +67,72 @@ final class ParentPom {
             if (document == null) {
                 break;
             }
-            if (depth > 0 && !isTheDeclaredParent(declaredParent, document)) {
-                // a file that is not the parent the child named must not be
-                // allowed to lend it properties
-                break;
+            if (depth > 0) {
+                if (!isTheDeclaredParent(declaredParent, document)) {
+                    // a file that is not the parent the child named must not be
+                    // allowed to lend it properties
+                    break;
+                }
+                parentOnDisk = true;
             }
             readProperties(document, inherited);
             declaredParent = firstElement(document, "parent");
             current = parentPath(current, declaredParent);
         }
+        if (repository != null && !parentOnDisk) {
+            // the parent the child named was not on disk, which is what an empty
+            // <relativePath/> asks for, so a repository is where it should be
+            readFromRepository(declaredParent, repository, inherited, new HashSet<>());
+        }
         inherited.putAll(ownProperties);
         return inherited;
+    }
+
+    /**
+     * Reads the properties of a parent out of a local Maven repository, and of that
+     * parent's own parent, and so on. The path a repository gives is built from the
+     * coordinates, so there is nothing to check it against: either the file named by
+     * those coordinates is there or it is not.
+     */
+    private static void readFromRepository(Element declared, Path repository, Map<String, String> target,
+            Set<Path> visited) {
+        Path pom = repositoryPath(declared, repository);
+        if (pom == null || !visited.add(pom) || !Files.isReadable(pom)) {
+            return;
+        }
+        Document document = parse(pom);
+        if (document == null) {
+            return;
+        }
+        readProperties(document, target);
+        readFromRepository(firstElement(document, "parent"), repository, target, visited);
+    }
+
+    /**
+     * Where a repository keeps the pom of the parent a child declared, which is
+     * {@code groupId/with/slashes/artifactId/version/artifactId-version.pom}. A
+     * version that is a property gives no such path, and then there is nothing to
+     * look up.
+     */
+    private static Path repositoryPath(Element declared, Path repository) {
+        if (declared == null) {
+            return null;
+        }
+        String groupId = text(declared, "groupId");
+        String artifactId = text(declared, "artifactId");
+        String version = text(declared, "version");
+        if (!isLiteral(groupId) || !isLiteral(artifactId) || !isLiteral(version)) {
+            return null;
+        }
+        String file = artifactId.trim() + "-" + version.trim() + ".pom";
+        return absolute(repository.resolve(groupId.trim().replace('.', File.separatorChar))
+                .resolve(artifactId.trim())
+                .resolve(version.trim())
+                .resolve(file));
+    }
+
+    private static boolean isLiteral(String value) {
+        return value != null && !value.isBlank() && !value.trim().startsWith("${");
     }
 
     /**

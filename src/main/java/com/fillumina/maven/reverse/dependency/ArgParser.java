@@ -1,5 +1,8 @@
 package com.fillumina.maven.reverse.dependency;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -24,6 +27,7 @@ public class ArgParser {
     private static final String OMIT_NULL_VERSION = "-v";
     private static final String OUTDATED = "-o";
     private static final String ALL_FOLDERS = "-a";
+    private static final String REPOSITORY = "-m";
 
     /** What to tell someone whose run read nothing, since that is usually why. */
     static final String ALL_FOLDERS_HINT = "-" + ALL_FOLDERS.substring(1);
@@ -56,6 +60,11 @@ public class ArgParser {
         "        both are matched as a substring: what you give is wrapped in ^.* and",
         "        .*$, so an anchor of your own will not match anything",
         "  " + OMIT_NULL_VERSION + "  leave out the dependencies and plugins with no version",
+        "  " + REPOSITORY + " folder",
+        "        read the properties of a parent from a local maven repository in that folder,",
+        "        for a parent that is not on disk, which is what an empty <relativePath/>",
+        "        asks for. Only what is named here is consulted, and it has to exist",
+        "        already. The usual value is " + System.getProperty("user.home") + "/.m2/repository",
         "  " + ALL_FOLDERS + " also look inside folders that have no pom.xml of their own, for a",
         "        tree whose projects are grouped under plain folders. A target, .git or",
         "        src folder is still left alone, and a folder that cannot be read is",
@@ -98,10 +107,12 @@ public class ArgParser {
     private boolean fullStacktrace;
     private boolean omitNullVersion;
     private boolean allFolders;
+    private Path repository;
     private PackageId outdatedArtifact;
 
     public ArgParser(String[] args) {
-        boolean project = false, dependency = false, changeArtifact = false, outdated = false;
+        boolean project = false, dependency = false, changeArtifact = false, outdated = false,
+                repository = false;
         if (args == null || args.length == 0) {
             error = true;
         } else {
@@ -132,6 +143,14 @@ public class ArgParser {
                     }
                     outdatedArtifact = new PackageId(fields[0], fields[1], fields[2]);
                     outdated = false;
+                } else if (repository) {
+                    Path folder = Paths.get(s);
+                    if (!Files.isDirectory(folder)) {
+                        throw new IllegalArgumentException(
+                                "not a local maven repository, no such folder: '" + s + "'");
+                    }
+                    this.repository = folder;
+                    repository = false;
                 } else if (REVERSE.equals(s)) {
                     reverse = true;
                 } else if (NO_DEPENCENCIES.equals(s)) {
@@ -152,6 +171,8 @@ public class ArgParser {
                     outdated = true;
                 } else if (ALL_FOLDERS.equals(s)) {
                     allFolders = true;
+                } else if (REPOSITORY.equals(s)) {
+                    repository = true;
                 } else {
                     paths.add(s);
                 }
@@ -228,6 +249,14 @@ public class ArgParser {
     }
 
     /**
+     * The local maven repository to look a parent up in, or null to look nowhere but
+     * the disk.
+     */
+    public Path getRepository() {
+        return repository;
+    }
+
+    /**
      * The artifact to report on, or null when every dependency should be shown.
      */
     public PackageId getOutdatedArtifact() {
@@ -243,6 +272,7 @@ public class ArgParser {
                 (dependencyRegexp != null ? "\ndependency regexp=" + dependencyRegexp : "") +
                 (omitNullVersion ? "\nomit null version=" + omitNullVersion : "") +
                 (allFolders ? "\nall folders=" + allFolders : "") +
+                (repository != null ? "\nrepository=" + repository : "") +
                 (outdatedArtifact != null ? "\noutdated artifact=" + outdatedArtifact : "") +
                 (artifactToChange != null ? "\nartifact to change=" + artifactToChange : "") +
                 (newVersion != null ? "\nnew version=" + newVersion : "") +

@@ -16,7 +16,24 @@ This application is geared towards directory of java projects with useful featur
 
 ## Versions
 
-- **1.3.0** 27/09/26 resolve `${parent.version}` and `${project.parent.version}`, require JDK 21+, upgrade to JUnit 6 and current build plugins, add `-o` to report the projects behind on an artifact, add `-a` to look inside folders that group projects, say on every run how much was read, step over a folder that cannot be read instead of ending the run, order versions the way Maven does, resolve a version from a parent pom found on disk, report a version that cannot be resolved instead of guessing it, pin an inherited version in the file that declares it, document the limits, the output format and the exit codes, fix the `scm` connection
+- **1.3.0** 27/09/26
+  - require JDK 21+, JUnit 6 and the current build plugins
+  - stop a rewritten `pom.xml` being corrupted when the new version is shorter than the old one
+  - report a version that cannot be resolved instead of quietly using the project own version
+  - resolve a version from a parent pom: on disk through `<relativePath>`, and from a local
+    maven repository given with `-m`, never trusting a file that is not the parent the pom names
+  - resolve `${parent.version}`, `${project.parent.version}` and the two groupId spellings
+  - `-c` pins a version whose property comes from a parent, so one project moves and its
+    siblings do not, and warns about a pom that declares the artifact it was pointed at but did
+    not change
+  - `-o group:artifact:ver` reports the projects still behind on an artifact
+  - `-a` looks inside the folders that only group projects
+  - every run says how much of the tree it read, and steps over a folder it cannot read instead
+    of ending the run
+  - order versions the way Maven does, held to it by a test that runs Maven own comparator
+  - report a mistyped command line in one line, and a path that cannot be read as an error
+  - say in the help what each option does, and what the tool does not do
+  - fix the `scm` connection
 
 - **1.2.4** 27/09/26 fix corrupted `pom.xml` when a version change shortens the file, fix errors with `-n -v` and `-n -r`, require JDK 11+
 
@@ -55,6 +72,8 @@ It accepts the following parameters:
 
 - `-v` omit dependencies/plugins with null version
 
+- `-m folder` read the properties of a parent from a local maven repository in that folder, which is where a parent with an empty `<relativePath/>` lives. Only what is named here is consulted, and it has to exist already. The usual value is `~/.m2/repository`
+
 - `-a` also look inside folders that have no `pom.xml` of their own, for a tree whose projects are grouped under plain folders. A `target`, `.git` or `src` folder is still left alone, and only in this mode, so nothing the default already reads is affected. A `pom.xml` under `src` is a resource someone ships, not a project, which is what a real tree turned up
 
 - `-o group:artifact:ver` keep only the projects still on an **older** version of that artifact. The version you pass is the one you consider current: `-o org.acme:lib:4.2` reports every project still on 3.1 or 4.2-SNAPSHOT and leaves the ones already on 4.2 or newer out. A dependency whose version could not be resolved is always kept, because nothing can say it is not behind. It cannot be mixed with `-c`, and with `-n` it keeps nothing, since `-n` reports projects with no dependencies at all
@@ -65,7 +84,7 @@ It accepts the following parameters:
 
 This tool reads the text of each `pom.xml`; it is not a Maven model. It does not:
 
-- consult anything outside the files on disk. A `<parent>` is followed through its `<relativePath>`, and the file is only trusted when its groupId, artifactId and version are the ones the child declared, so an unrelated pom that happens to sit at `../pom.xml` is ignored. A `dependencyManagement`, an imported BOM and a profile are never read, and a parent that lives only in the local repository stays invisible;
+- consult anything outside the files on disk and the repository named with `-m`. A `<parent>` is followed through its `<relativePath>`, and the file is only trusted when its groupId, artifactId and version are the ones the child declared, so an unrelated pom that happens to sit at `../pom.xml` is ignored. A `dependencyManagement`, an imported BOM and a profile are never read;
 - invent a version. A version written as `${property}` that cannot be resolved keeps its placeholder in the listing and is named on `stderr`. `-v` does not hide it, because it is not a version that was never declared, it is one that could not be read;
 - resolve transitive dependencies, the local repository or version conflicts. For a single project's real tree use the [Maven Dependency Tree Plugin](https://maven.apache.org/plugins/maven-dependency-plugin/tree-mojo.html);
 - tell a `<dependency>` inside `<dependencyManagement>` from a declared one, so `-c` rewrites a managed version exactly as it rewrites a declared one;
