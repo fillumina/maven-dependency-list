@@ -4,7 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -25,8 +28,26 @@ public class Pom {
 
     private final PackageId pomPackage;
     private final Map<String,String> propertyMap;
+    private final Map<String,String> ownPropertyMap;
+    private final Path source;
+    private final boolean resolveParents;
+    private final List<String> unresolvedWarnings = new ArrayList<>();
 
     public Pom(String pom, AssociationBuilder associationBuilder, boolean noDependencies) {
+        this(pom, null, associationBuilder, noDependencies, false);
+    }
+
+    /**
+     * Reads one pom.
+     *
+     * @param source where the text was read from, used in warnings, may be null
+     * @param resolveParents whether a version written as a property is also looked
+     *                       for in the poms above {@code source} on disk
+     */
+    public Pom(String pom, Path source, AssociationBuilder associationBuilder,
+            boolean noDependencies, boolean resolveParents) {
+        this.source = source;
+        this.resolveParents = resolveParents;
         // Instantiate the Factory
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
@@ -46,7 +67,10 @@ public class Pom {
             // http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work
             doc.getDocumentElement().normalize();
 
-            propertyMap = parseProperties(doc);
+            ownPropertyMap = parseProperties(doc);
+            propertyMap = resolveParents && source != null
+                    ? ParentPom.inheritedProperties(source, ownPropertyMap)
+                    : ownPropertyMap;
 
             pomPackage = parsePomPackage(doc);
 
@@ -56,6 +80,7 @@ public class Pom {
                 parseDependency(doc, propertyMap, pomPackage, "dependency", associationBuilder);
                 parseDependency(doc, propertyMap, pomPackage, "plugin", associationBuilder);
             }
+            unresolvedWarnings.forEach(warning -> System.err.println("WARNING: " + warning));
 
         } catch (ParserConfigurationException | SAXException | IOException e) {
             throw new RuntimeException(e);
@@ -85,10 +110,22 @@ public class Pom {
         return pom;
     }
 
+    /**
+     * The properties this pom declares itself, and the only ones a rewrite of this
+     * file can change.
+     */
+    public Map<String, String> getOwnPropertyMap() {
+        return ownPropertyMap;
+    }
+
     public PackageId getPomPackage() {
         return pomPackage;
     }
 
+    /**
+     * Every property visible from this pom, its own plus those it inherits, which
+     * is what says which version a dependency is actually on.
+     */
     public Map<String, String> getPropertyMap() {
         return propertyMap;
     }
@@ -137,9 +174,17 @@ public class Pom {
         String groupId = extractTagText(element, "groupId");
         String artifactId = extractTagText(element, "artifactId");
         String version = extractTagText(element, "version");
+        String unresolvedProperty = null;
         if (version != null && version.startsWith("${")) {
             final String property = version.substring(2, version.length() - 1);
-            version = versionMap.get(property);
+            final String resolved = versionMap.get(property);
+            if (resolved == null) {
+                // keep the placeholder: an unresolvable version is not the version
+                // of the project, and saying so is better than guessing
+                unresolvedProperty = property;
+            } else {
+                version = resolved;
+            }
         }
         if (pomPackage != null) {
             if (groupId == null) {
@@ -159,7 +204,32 @@ public class Pom {
         // https://stackoverflow.com/questions/65527291/is-groupid-required-for-plugins-in-maven-pom-xml
         final String adjustedGroupId = groupId == null && isPlugin ? "org.apache.maven.pugins" : groupId;
         PackageId dependency = new PackageId(adjustedGroupId, artifactId, version);
+        if (unresolvedProperty != null && isWorthReporting(tagName, unresolvedProperty)) {
+            unresolvedWarnings.add(unresolvedWarning(dependency, unresolvedProperty));
+        }
         return dependency;
+    }
+
+    /**
+     * A property the model defines by itself is not an unresolved one: `${project.version}`
+     * and `${project.groupId}` are filled in from the project being read, and the
+     * project's own tags and its `<parent>` are not a dependency at all.
+     */
+    private static boolean isWorthReporting(String tagName, String property) {
+        boolean isDependencyOrPlugin = "dependency".equals(tagName) || "plugin".equals(tagName);
+        boolean isModelProperty = "project.version".equals(property) || "project.groupId".equals(property);
+        return isDependencyOrPlugin && !isModelProperty;
+    }
+
+    private String unresolvedWarning(PackageId dependency, String property) {
+        StringBuilder warning = new StringBuilder();
+        if (source != null) {
+            warning.append(source).append(": ");
+        }
+        return warning.append(dependency.getName())
+                .append(" has version ${").append(property).append("}, which is not defined in this pom.xml")
+                .append(resolveParents ? " or in any parent pom found on disk" : "")
+                .toString();
     }
 
     private String extractTagText(Element element, String tagName) throws DOMException {

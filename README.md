@@ -16,7 +16,7 @@ This application is geared towards directory of java projects with useful featur
 
 ## Versions
 
-- **1.3.0** 27/09/26 require JDK 21+, upgrade to JUnit 6 and current build plugins, document the limits, the output format and the exit codes, fix the `scm` connection
+- **1.3.0** 27/09/26 require JDK 21+, upgrade to JUnit 6 and current build plugins, add `-P` to resolve a version from a parent pom, report a version that cannot be resolved instead of guessing it, document the limits, the output format and the exit codes, fix the `scm` connection
 
 - **1.2.4** 27/09/26 fix corrupted `pom.xml` when a version change shortens the file, fix errors with `-n -v` and `-n -r`, require JDK 11+
 
@@ -47,7 +47,7 @@ It accepts the following parameters:
 - `-d dependency-regexp` specifies a regexp filter for dependency names ($ and ^ will be added)
 
 - `-c group:artifact:ver:new-ver` change version of all package occurrences  found within the tree hierarchy honoring the project filtering (`-p`).
-  It doesn't support dependency filter (`-d`).
+  It doesn't support dependency filter (`-d`). A version inherited from a parent is pinned in the file that declares it, so one project moves without its siblings.
 
 - `-b` make a backup copy of the changed `pom.xml` -> `pom.xml.bak` (only with `-c`)
 
@@ -55,14 +55,16 @@ It accepts the following parameters:
 
 - `-v` omit dependencies/plugins with null version
 
+- `-P` read the properties of the parent poms reachable on disk through `<relativePath>`, so a version written as a property inherited from a parent is resolved
+
 - It accepts any number of directories that will be traversed searching for sub-projects (a directory containing a `pom.xml` file).
 
 ## Limitations
 
 This tool reads the text of each `pom.xml`; it is not a Maven model. It does not:
 
-- consult anything outside the file it is reading: a `<parent>`, a `dependencyManagement`, an imported BOM, a profile and a property defined in another `pom.xml` are all invisible to it;
-- report an unresolved `${property}` version as unresolved. The version falls back to the version of the project being scanned, so the listing can show a version that was never declared anywhere, and `-v` does not suppress it because the fallback happens first;
+- consult anything outside the file it is reading: a `dependencyManagement`, an imported BOM and a profile are invisible to it. `-P` widens that to the parents reachable on disk through `<relativePath>`, and no further: a parent that lives only in the local repository is still invisible, and so is a grandparent beyond the files on disk;
+- invent a version. A version written as `${property}` that cannot be resolved keeps its placeholder in the listing and is named on `stderr`. `-v` does not hide it, because it is not a version that was never declared, it is one that could not be read;
 - resolve transitive dependencies, the local repository or version conflicts. For a single project's real tree use the [Maven Dependency Tree Plugin](https://maven.apache.org/plugins/maven-dependency-plugin/tree-mojo.html);
 - tell a `<dependency>` inside `<dependencyManagement>` from a declared one, so `-c` rewrites a managed version exactly as it rewrites a declared one;
 - enter a directory that has no `pom.xml`. Only the given root and the directories holding a `pom.xml` are scanned, so projects grouped under a non-project directory are not found;
@@ -71,14 +73,14 @@ This tool reads the text of each `pom.xml`; it is not a Maven model. It does not
 Three details that are easy to trip over:
 
 - the `-p` and `-d` regexps are wrapped as `^.*<regexp>.*$`, so an unanchored regexp always matches as a substring;
-- when a version is a single `${property}` and that string appears exactly once in the file, `-c` changes the property's value rather than the version. A property that is not defined in the same file is never changed, and the dependency is then skipped without a word;
+- a version written as a single `${property}` is rewritten in one of two ways. If the property is declared in the same file and used once, `-c` changes the property's value, which moves everything that shares it. If the property comes from a parent, `-c` cannot change it here, so it pins the version in this file instead: `${lib.version}` becomes `<version>4.2</version>`. That moves one project and leaves its siblings and the parent alone;
 - an unparsable `pom.xml` aborts the whole run, not just that project.
 
 ## Output and exit codes
 
 Output is plain text on `stdout`: one `group:artifact:version` per line, with a project's dependencies indented by a tab. A dependency with no version prints as `group:artifact`. The format is meant to be read or piped into `grep` and `awk`.
 
-Every run prints a `configuration:` block and a `searching in:` line before the listing, so a script that wants only the data has to skip them.
+Every run prints a `configuration:` block and a `searching in:` line before the listing, so a script that wants only the data has to skip them. Two things add a `WARNING:` line on `stderr`, which never mixes into the data on `stdout`: a version that could not be resolved, and a pom that declares the artifact `-c` was pointed at but did not change, which is how a sweep tells you which projects it did not move.
 
 | Situation | What is printed | Exit code |
 | --- | --- | --- |

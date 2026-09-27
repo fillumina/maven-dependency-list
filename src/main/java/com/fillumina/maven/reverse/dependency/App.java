@@ -39,6 +39,14 @@ public class App {
         }
     }
 
+    /**
+     * Whether the text mentions the artifact at all, so a sweep can stay quiet about
+     * the poms that do not use it and speak up about the ones it failed to change.
+     */
+    private static boolean declares(String pomContent, PackageId artifact) {
+        return pomContent.contains("<artifactId>" + artifact.getArtifactId() + "</artifactId>");
+    }
+
     static void execution(ArgParser arguments) throws IOException {
         if (arguments.isError() || arguments.isHelp()) {
             System.out.println(ArgParser.getUsage());
@@ -71,6 +79,7 @@ public class App {
             System.out.println("");
 
             final boolean noDependencies = arguments.isNoDependencies();
+            final boolean resolveParents = arguments.isResolveParents();
             final PackageId artifactToChange = arguments.getArtifactToChange();
             final String newVersion = arguments.getNewVersion();
             final boolean changeArtifactMode = artifactToChange != null && newVersion != null;
@@ -79,7 +88,7 @@ public class App {
             for (Path pomPath : pomPaths) {
                 String pomContent = Files.readString(pomPath);
                 if (changeArtifactMode) {
-                    Pom pom = new Pom(pomContent, associationBuilder, true);
+                    Pom pom = new Pom(pomContent, pomPath, associationBuilder, true, resolveParents);
                     if (moduleRegexp != null) {
                         PackageId pkg = pom.getPomPackage();
                         String pkgName = pkg.toString();
@@ -89,7 +98,14 @@ public class App {
                         }
                     }
                     CharSequence modifiedPom = PomModifier.INSTANCE.modify(
-                            pomContent, pom.getPropertyMap(), artifactToChange, newVersion);
+                            pomContent, pom.getPropertyMap(), pom.getOwnPropertyMap(),
+                            artifactToChange, newVersion);
+                    if (modifiedPom == null && declares(pomContent, artifactToChange)) {
+                        System.err.println("WARNING: " + pomPath + ": " + artifactToChange.getName()
+                                + " is declared here but was not changed, because its version is not "
+                                + artifactToChange.getVersion()
+                                + " or it is a property this file cannot rewrite");
+                    }
                     if (modifiedPom != null) {
                         if (makeBackupCopy) {
                             final File pomFile = pomPath.toAbsolutePath().normalize().toFile();
@@ -102,7 +118,7 @@ public class App {
                         System.out.println("modified artifact in " + pomPath.toString());
                     }
                 } else {
-                    new Pom(pomContent, associationBuilder, noDependencies);
+                    new Pom(pomContent, pomPath, associationBuilder, noDependencies, resolveParents);
                 }
             }
 

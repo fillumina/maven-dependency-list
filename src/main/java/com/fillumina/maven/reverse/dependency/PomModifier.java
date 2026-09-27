@@ -22,13 +22,29 @@ public class PomModifier {
     }
 
     public StringBuffer modify(String pom, Map<String, String> propertyMap,
-            PackageId packageId, String newVersion) {
+            Map<String, String> ownPropertyMap, PackageId packageId, String newVersion) {
         StringBuffer pomBuffer = new StringBuffer(pom);
-        return modifyBuffer(pomBuffer, propertyMap, packageId, newVersion);
+        return modifyBuffer(pomBuffer, propertyMap, ownPropertyMap, packageId, newVersion);
     }
 
     static StringBuffer modifyBuffer(StringBuffer pom, Map<String, String> propertyMap,
             PackageId packageId, String newVersion) {
+        return modifyBuffer(pom, propertyMap, propertyMap, packageId, newVersion);
+    }
+
+    /**
+     * Rewrites the version of every occurrence of {@code packageId} that is on
+     * {@code packageId}'s current version, and returns null when it changed nothing.
+     *
+     * @param propertyMap every property visible in this pom, used to work out
+     *                    which version the dependency is on
+     * @param ownPropertyMap the properties this pom declares itself. A version
+     *                    written as one of those is changed by rewriting the
+     *                    property; one that comes from anywhere else is pinned in
+     *                    place, because the property is not in this file
+     */
+    static StringBuffer modifyBuffer(StringBuffer pom, Map<String, String> propertyMap,
+            Map<String, String> ownPropertyMap, PackageId packageId, String newVersion) {
         boolean modified = false;
         int idx = 0;
         while (true) {
@@ -57,19 +73,19 @@ public class PomModifier {
                 String versionContent = extractVersionContent(block);
                 String actualVersion = substituteProperties(versionContent, propertyMap);
                 if (actualVersion != null && actualVersion.equals(requiredVersion)) {
-                    boolean isProperty = versionContent.matches("^\\$\\{(.*)\\}$") &&
-                            countOccurrences(pom, versionContent) == 1;
+                    final String propertyName = singleProperty(versionContent);
+                    boolean isProperty = propertyName != null
+                            && ownPropertyMap.containsKey(propertyName)
+                            && countOccurrences(pom, versionContent) == 1;
                     if (isProperty) {
-                        final String propertyName = versionContent.substring(2, versionContent
-                                .length() - 1);
                         final String propertyContent = createTag(propertyName, actualVersion);
                         final String newPropertyContent = createTag(propertyName, newVersion);
                         final int propertyIndex = indexOf(pom, propertyContent);
                         if (propertyIndex != -1) {
                             pom.replace(propertyIndex, propertyIndex + propertyContent.length(),
                                     newPropertyContent);
+                            modified = true;
                         }
-                        modified = true;
                     } else {
                         final int versionIndex = finder.indexOf("version", versionContent);
 
@@ -86,6 +102,20 @@ public class PomModifier {
             idx += endIndex;
         }
         return modified ? pom : null;
+    }
+
+    private static final Pattern SINGLE_PROPERTY = Pattern.compile("^\\$\\{(.*)}$");
+
+    /**
+     * The name of the property, when the content is a single `${property}`
+     * reference and nothing else, and null when it is not one.
+     */
+    static String singleProperty(CharSequence content) {
+        if (content == null) {
+            return null;
+        }
+        Matcher matcher = SINGLE_PROPERTY.matcher(content);
+        return matcher.matches() ? matcher.group(1) : null;
     }
 
     static String createTag(final String name, String value) {
