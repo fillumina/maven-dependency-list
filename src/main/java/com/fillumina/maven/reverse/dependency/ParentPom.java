@@ -87,9 +87,31 @@ final class ParentPom {
             return false;
         }
         Element root = candidate.getDocumentElement();
-        return agrees(text(declared, "groupId"), text(root, "groupId"))
+        return agrees(text(declared, "groupId"), effective(root, "groupId"))
                 && agrees(text(declared, "artifactId"), text(root, "artifactId"))
-                && agrees(text(declared, "version"), text(root, "version"));
+                && agrees(text(declared, "version"), effective(root, "version"));
+    }
+
+    /**
+     * The groupId or version a pom ends up with, which is not always the one it
+     * writes: a child that inherits either from its parent writes neither, so the
+     * chain of {@code <parent>} blocks is followed until one of them does. This
+     * reads text only and never touches the filesystem, and the depth is bounded
+     * so a cycle of {@code <parent>} elements cannot spin.
+     */
+    private static String effective(Element project, String tagName) {
+        Element current = project;
+        Element parent = (Element) extractTag(current, "parent");
+        for (int depth = 0; current != null && depth < MAX_DEPTH; depth++) {
+            Element declared = (Element) extractTag(current, tagName);
+            if (declared != null) {
+                return declared.getTextContent();
+            }
+            Element next = parent == null ? null : (Element) extractTag(parent, "parent");
+            current = parent;
+            parent = next;
+        }
+        return null;
     }
 
     private static boolean agrees(String declared, String found) {

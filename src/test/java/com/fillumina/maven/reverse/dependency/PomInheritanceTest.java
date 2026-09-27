@@ -137,6 +137,41 @@ public class PomInheritanceTest {
     }
 
     @Test
+    public void shouldFollowAParentThatInheritsItsOwnCoordinates() throws IOException {
+        // the middle pom declares neither a groupId nor a version of its own, so the
+        // coordinates the child named are only the ones the middle one inherits
+        write(root.resolve("elsewhere/pom.xml"),
+                "<project>"
+                        + "<modelVersion>4.0.0</modelVersion>"
+                        + "<parent><groupId>com.acme</groupId><artifactId>root</artifactId>"
+                        + "<version>5.0</version></parent>"
+                        + "<artifactId>middle</artifactId>"
+                        + properties("lib.version", "3.1")
+                        + "</project>");
+        writeParent("", "root", "");
+        writeChild("", PROPERTY_VERSION, "middle", "../elsewhere/pom.xml");
+
+        assertResolved(run(), "3.1");
+    }
+
+    @Test
+    public void shouldNotFollowAParentWhoseInheritedCoordinatesDoNotMatch() throws IOException {
+        // the middle pom says it inherits from a root at another version
+        write(root.resolve("elsewhere/pom.xml"),
+                "<project>"
+                        + "<modelVersion>4.0.0</modelVersion>"
+                        + "<parent><groupId>com.acme</groupId><artifactId>root</artifactId>"
+                        + "<version>6.6</version></parent>"
+                        + "<artifactId>middle</artifactId>"
+                        + properties("lib.version", "3.1")
+                        + "</project>");
+        writeParent("", "root", "");
+        writeChild("", PROPERTY_VERSION, "middle", "../elsewhere/pom.xml");
+
+        assertUnresolved(run(), NOT_DEFINED);
+    }
+
+    @Test
     public void shouldPinAnInheritedVersionInTheChild() throws IOException {
         writeParent(properties("lib.version", "3.1"), "root", "");
         writeChild("", PROPERTY_VERSION, "root", null);
